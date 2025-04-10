@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2018 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menu "Utils"
+
+config NRF_CONNECT_SDK
+    bool "Enable support for nRF Connect SDK"
+    select ZEPHYR_BASE
+
+config STM32
+    bool "Enable support for STM32"
+
+config ZEPHYR_BASE
+    bool "Enable support for ZEPHYR_BASE"
+
+endmenu

@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "dpv.h": "c",
+        "electrochemical_ca.h": "c",
+        "*.tcc": "c",
+        "cmath": "c",
+        "compare": "cpp",
+        "electrochemical_cv.h": "c",
+        "electrochemical_dpv.h": "c",
+        "system_error": "c",
+        "ad5940_utility_lpdac.h": "c",
+        "string.h": "c",
+        "parameters.h": "c",
+        "ad5940.h": "c"
+    },
+}

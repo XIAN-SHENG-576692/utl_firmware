@@ -1,0 +1,52 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../utils"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"dk_buttons_and_leds.h": "c",
+			"driver_gpio_impl_zephyr.h": "c",
+			"ad5940_port_reset_impl_zephyr.h": "c",
+			"ratio": "c",
+			"system_error": "c",
+			"array": "c",
+			"functional": "c",
+			"tuple": "c",
+			"type_traits": "c",
+			"utility": "c",
+			"ad5940_port_spi_impl_zephyr.h": "c",
+			"ad5940_port_intc1_impl_zephyr.h": "c",
+			"electrochemical_to_ad5940.h": "c",
+			"electrochemical_to_ad5940_cv.h": "c",
+			"electrochemical_to_ad5940_dpv.h": "c",
+			"test_ad5940_electrochemical_dpv.h": "c",
+			"electrochemical_to_ad5940_ca.h": "c",
+			"ad5940_electrochemical_dpv_struct.h": "c",
+			"test_ad5940_electrochemical_cv.h": "c",
+			"ad5940_electrochemical_cv.h": "c",
+			"ad5940_electrochemical_dpv.h": "c",
+			"ad5940_electrochemical_cv_struct.h": "c",
+			"ad5940_electrochemical_ca.h": "c",
+			"test_ad5940_buffer_size.h": "c",
+			"ad5940_electrochemical_utils_sw_matrix.h": "c",
+			"spi.h": "c",
+			"gpio.h": "c",
+			"test_ad5940_lock.h": "c",
+			"ad5940_port_intc0_impl_zephyr.h": "c",
+			"zephyr_gpio_debounced_interrupt.h": "c",
+			"log.h": "c",
+			"device.h": "c",
+			"kernel.h": "c",
+			"string_view": "c",
+			"test_ad5940_init.h": "c",
+			"compare": "c",
+			"ad5940_utils_hsdac.h": "c",
+			"ad5940_utils_fifo.h": "c"
+		}
+	}
+}

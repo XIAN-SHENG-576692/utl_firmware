@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"hci.h": "c",
+			"settings.h": "c",
+			"gatt.h": "c",
+			"bluetooth.h": "c",
+			"bluetooth_config.h": "c",
+			"bluetooth_config_lock.h": "c",
+			"on_receive.h": "c",
+			"array": "c"
+		}
+	}
+}

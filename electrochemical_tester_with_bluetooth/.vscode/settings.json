@@ -1,0 +1,17 @@
+{
+    "C_Cpp.errorSquiggles": "enabled",
+    "files.associations": {
+        "dk_buttons_and_leds.h": "c",
+        "driver_gpio_impl_zephyr.h": "c",
+        "ad5940_port_reset_impl_zephyr.h": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "array": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "ad5940_port_spi_impl_zephyr.h": "c",
+        "ad5940_port_intc1_impl_zephyr.h": "c"
+    }
+}

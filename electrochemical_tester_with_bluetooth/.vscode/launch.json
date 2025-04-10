@@ -1,0 +1,12 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "nrf-connect",
+			"request": "launch",
+			"name": "Launch build",
+			"config": "d:/Projects/nordic/Projects/electrochemical_tester_with_bluetooth/build",
+			"runToEntryPoint": "main"
+		}
+	]
+}

@@ -1,0 +1,33 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../utils"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"ble_simple_impl_zephyr.h": "c",
+			"ad5940_hardware.h": "c",
+			"ad5940_lock.h": "c",
+			"gpio.h": "c",
+			"driver_gpio.h": "c",
+			"driver_spi.h": "c",
+			"log.h": "c",
+			"spi.h": "c",
+			"ratio": "c",
+			"system_error": "c",
+			"array": "c",
+			"functional": "c",
+			"tuple": "c",
+			"type_traits": "c",
+			"utility": "c",
+			"dk_buttons_and_leds.h": "c",
+			"solenoid_valve_init.h": "c",
+			"fan_init.h": "c",
+			"solenoid_valve.h": "c"
+		}
+	}
+}

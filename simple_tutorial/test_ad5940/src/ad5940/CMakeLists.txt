@@ -1,0 +1,33 @@
+zephyr_library_include_directories(
+  .
+  ./application
+  ./library
+  ./main
+  ./port
+  ./struct
+  ./utility
+  ./application/electrochemical
+  ./application/temperature
+  ./application/electrochemical/utility
+  ./application/temperature/utility
+)
+
+zephyr_library_sources(
+  ./application/electrochemical/ad5940_electrochemical_CA.c
+  ./application/electrochemical/ad5940_electrochemical_CV.c
+  ./application/electrochemical/ad5940_electrochemical_DPV.c
+  ./application/electrochemical/utility/ad5940_electrochemical_utility_afe_dac.c
+  ./application/electrochemical/utility/ad5940_electrochemical_utility_sop.c
+  ./application/electrochemical/utility/ad5940_electrochemical_utility_tia_adc.c
+  ./application/electrochemical/utility/ad5940_electrochemical_utility_working_electrode.c
+  ./application/temperature/ad5940_temperature.c
+  ./library/ad5940.c
+  ./main/ad5940_main.c
+  ./struct/ad5940_struct.c
+  ./utility/ad5940_utility_adc.c
+  ./utility/ad5940_utility_gpio.c
+  ./utility/ad5940_utility_hsdac.c
+  ./utility/ad5940_utility_lpdac.c
+  ./utility/ad5940_utility_power.c
+  ./utility/ad5940_utility_sequence_generator.c
+)

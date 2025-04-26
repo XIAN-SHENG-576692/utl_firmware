@@ -262,6 +262,7 @@ AD5940Err AD5940_TEMPERATURE_interrupt(
     AD5940_INTCClrFlag(AFEINTSRC_DATAFIFOTHRESH);
     if(AD5940_FIFO_new_thresh > 0)
     {
+        AD5940_reset_fifocon();
         AD5940_FIFOThrshSet(AD5940_FIFO_new_thresh);
         AD5940_EnterSleepS();
     }

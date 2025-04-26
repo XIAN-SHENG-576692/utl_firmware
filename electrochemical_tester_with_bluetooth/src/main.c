@@ -50,7 +50,7 @@ static uint8_t ble_packet_buffer[BLE_PACKET_MAX_LENGTH];
 static uint16_t ble_packet_buffer_length;
 
 static TEST_AD5940_ELECTROCHEMICAL_CALIBRATION_PARAMETERS ad5940_electrochemical_calibration_parameters = {
-	.HstiaRtiaSel = HSTIARTIA_10K,
+	.HstiaRtiaSel = HSTIARTIA_1K,
 };
 
 typedef union {
@@ -69,6 +69,9 @@ static uint32_t adc_buffer[ADC_BUFFER_SIZE];
 static int16_t adc_buffer_length;
 
 static int32_t temperature;
+
+#include "utl_ad5940_electrochemical_parameters.h"
+#include "test_ad5940_electrochemical_calibration_result.h"
 
 int main(void)
 {
@@ -119,17 +122,23 @@ int main(void)
 		{
 			continue;
 		}
+		uint32_t entity_id;
+		memcpy(
+			&entity_id,
+			(ble_packet_buffer + 1),
+			sizeof(uint32_t)
+		);
 
 		// Get witch type of electrochemical we want to measure.
-		uint8_t electrochemical_type = ble_packet_buffer[1];
+		uint8_t electrochemical_type = ble_packet_buffer[1 + sizeof(entity_id)];
 		memcpy(
-			&parameters.ca,
-			(ble_packet_buffer + 2),
+			&parameters,
+			(ble_packet_buffer + (1 + sizeof(entity_id) + sizeof(electrochemical_type))),
 			sizeof(ELECTROCHEMICAL_PARAMETERS_UNION)
 		);
 		memcpy(
 			&electrode_routing,
-			(ble_packet_buffer + 2 + sizeof(ELECTROCHEMICAL_PARAMETERS_UNION)),
+			(ble_packet_buffer + (1 + sizeof(entity_id) + sizeof(electrochemical_type) + sizeof(parameters))),
 			sizeof(AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING)
 		);
 
@@ -137,10 +146,46 @@ int main(void)
 		test_ad5940_start_temperature(
 			&temperature
 		);
-		ble_packet_buffer[0] = 0x02;
-		ble_packet_buffer[1] = 0x01;
-		memcpy((ble_packet_buffer + 2), &temperature, sizeof(temperature));
-		BLE_SIMPLE_send_packet(ble_packet_buffer, 6);
+
+		{
+			uint8_t* p = ble_packet_buffer;
+
+			*p++ = 0x02;
+			*p++ = 0x01;
+
+			memcpy(p, &entity_id, sizeof(entity_id));
+			p += sizeof(entity_id);
+
+			memcpy(p, &electrochemical_type, sizeof(electrochemical_type));
+			p += sizeof(electrochemical_type);
+
+			memcpy(p, &parameters, sizeof(parameters));
+			p += sizeof(parameters);
+
+			memcpy(p, &temperature, sizeof(temperature));
+			p += sizeof(temperature);
+
+			memcpy(p, &electrode_routing, sizeof(electrode_routing));
+			p += sizeof(electrode_routing);
+
+			memcpy(p, &test_ad5940_hsrtia_result, sizeof(test_ad5940_hsrtia_result));
+			p += sizeof(test_ad5940_hsrtia_result);
+
+			float adcPga;
+			AD5940_map_ADCPGA(UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCPga, &adcPga);
+			memcpy(p, &adcPga, sizeof(adcPga));
+			p += sizeof(adcPga);
+
+			float adcRefVolt = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADC_REFERENCE_VOLT;
+			memcpy(p, &adcRefVolt, sizeof(adcRefVolt));
+			p += sizeof(adcRefVolt);
+
+			// Calculate the packet length
+			size_t packet_len = p - ble_packet_buffer;
+
+			// Send packet
+			BLE_SIMPLE_send_packet(ble_packet_buffer, packet_len);
+		}
 
 		// Measure the electrochemical.
 		switch (electrochemical_type)
@@ -187,15 +232,49 @@ int main(void)
 		ble_packet_buffer[1] = 0x02;
 		for(uint16_t index=0; index<adc_buffer_length; index++)
 		{
-			memcpy((ble_packet_buffer + 2), &index, sizeof(index));
-			int32_t adc_volt = (int32_t) (AD5940_ADCCode2Volt(
-				adc_buffer[index] & 0xFFFF, 
-				ADCPGA_1, 
-				1.82F
-			) * 1e9f);
-			memcpy((ble_packet_buffer + 2 + sizeof(index)), &adc_volt, sizeof(adc_volt));
-			BLE_SIMPLE_send_packet(ble_packet_buffer, (2 + sizeof(index) + sizeof(adc_volt)));
+			// memcpy((ble_packet_buffer + 2), &index, sizeof(index));
+			// int32_t adc_volt = (int32_t) (AD5940_ADCCode2Volt(
+			// 	adc_buffer[index] & 0xFFFF, 
+			// 	UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCPga, 
+			// 	UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADC_REFERENCE_VOLT
+			// ) * 1e9f);
+			// memcpy((ble_packet_buffer + 2 + sizeof(index)), &adc_volt, sizeof(adc_volt));
+			// BLE_SIMPLE_send_packet(ble_packet_buffer, (2 + sizeof(index) + sizeof(adc_volt)));
+
+			// #include "test_ad5940_electrochemical_calibration_result.h"
+			// #include "utl_ad5940_electrochemical_parameters.h"
+			// memcpy((ble_packet_buffer + 2), &index, sizeof(index));
+			// int32_t current;
+			// AD5940Err error = AD5940_convert_adc_to_current(
+			// 	adc_buffer[index],
+			// 	&test_ad5940_hsrtia_result,
+			// 	UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCPga, 
+			// 	UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADC_REFERENCE_VOLT,
+			// 	&current
+			// );
+			// memcpy((ble_packet_buffer + 2 + sizeof(index)), &current, sizeof(current));
+			// BLE_SIMPLE_send_packet(ble_packet_buffer, (2 + sizeof(index) + sizeof(current)));
+			// if(error != AD5940ERR_OK) return error;
+
+			uint8_t* p = (ble_packet_buffer + 2);
+
+			memcpy(p, &index, sizeof(index));
+			p += sizeof(index);
+
+			memcpy(p, &adc_buffer[index], sizeof(adc_buffer[index]));
+			p += sizeof(adc_buffer[index]);
+
+			// Calculate the packet length
+			size_t packet_len = p - ble_packet_buffer;
+
+			// Send packet
+			BLE_SIMPLE_send_packet(ble_packet_buffer, packet_len);
 		}
+
+		// Send the end.
+		ble_packet_buffer[0] = 0x02;
+		ble_packet_buffer[1] = 0x03;
+		BLE_SIMPLE_send_packet(ble_packet_buffer, 2);
 	}
 
 	return 0;

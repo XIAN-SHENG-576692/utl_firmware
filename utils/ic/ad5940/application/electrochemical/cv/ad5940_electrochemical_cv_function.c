@@ -14,7 +14,7 @@ static inline uint16_t STEP_NUMBER_RAMP(float e_begin, float e_end, float e_step
     float intpart;
     float frac = modff(total, &intpart);
 
-    if (frac > 1e-7f) {  // If the fractional part is greater than epsilon, round up unconditionally
+    if (frac > 1e-5f) {  // If the fractional part is greater than epsilon, round up unconditionally
         return (uint16_t)(intpart + 1.0f);
     } else {
         return (uint16_t)(intpart);  // Otherwise, treat it as an integer without rounding up
@@ -233,7 +233,7 @@ static AD5940Err _start_wakeup_timer_sequence(
 
     AD5940_SEQCtrlS(bTRUE);
 
-    #define SAMPLE_DELAY 0.025
+    #define SAMPLE_DELAY 0.001
     
     SEQInfo_Type *ADC_seq_info;
     AD5940_ELECTROCHEMICAL_UTILITY_get_ADC_seq_info(
@@ -259,8 +259,8 @@ static AD5940Err _start_wakeup_timer_sequence(
     return AD5940ERR_OK;
 }
 
-AD5940Err AD5940_ELECTROCHEMICAL_CV_start_with_LPDAC_LPTIA(
-    const AD5940_ELECTROCHEMICAL_CV_LPDAC_LPTIA_CONFIG *const config
+AD5940Err AD5940_ELECTROCHEMICAL_CV_start(
+    const AD5940_ELECTROCHEMICAL_CV_CONFIG *const config
 )
 {
     AD5940Err error = AD5940ERR_OK;
@@ -277,99 +277,77 @@ AD5940Err AD5940_ELECTROCHEMICAL_CV_start_with_LPDAC_LPTIA(
      */
     AD5940_clear_GPIO_and_INT_flag();
 
-    error = AD5940_ELECTROCHEMICAL_config_afe_lpdac_lptia(
-        config->afe_ref_cfg,
-        config->parameters->e_begin
-    );
-    if(error != AD5940ERR_OK) return error;
+    if(config->lpdac_to_lptia != NULL)
+    {
+        error = AD5940_ELECTROCHEMICAL_config_afe_lpdac_lptia(
+            config->lpdac_to_lptia->afe_ref_cfg,
+            config->parameters->e_begin
+        );
+        if(error != AD5940ERR_OK) return error;
+    
+        error = _write_sequence_commands(
+            config->parameters,
+            &(config->lpdac_to_lptia->dsp_cfg->ADCFilterCfg),
+            &(config->lpdac_to_lptia->dsp_cfg->DftCfg),
+            config->run->clock,
+            config->run->DataType
+        );
+        if(error != AD5940ERR_OK) return error;
 
-    error = _write_sequence_commands(
-        config->parameters,
-        &(config->dsp_cfg->ADCFilterCfg),
-        &(config->dsp_cfg->DftCfg),
-        config->clock,
-        config->DataType
-    );
-    if(error != AD5940ERR_OK) return error;
+        error = AD5940_ELECTROCHEMICAL_config_lpdac_lptia_adc(
+            config->lpdac_to_lptia->lpdac_cfg,
+            config->lpdac_to_lptia->lptia_cfg,
+            config->lpdac_to_lptia->dsp_cfg
+        );
+        if(error != AD5940ERR_OK) return error;
+    }
+    else if(config->lpdac_to_hstia != NULL)
+    {
+        error = AD5940_ELECTROCHEMICAL_config_afe_lpdac_hstia(
+            config->lpdac_to_hstia->afe_ref_cfg,
+            config->parameters->e_begin
+        );
+        if(error != AD5940ERR_OK) return error;
+    
+        error = _write_sequence_commands(
+            config->parameters,
+            &(config->lpdac_to_hstia->dsp_cfg->ADCFilterCfg),
+            &(config->lpdac_to_hstia->dsp_cfg->DftCfg),
+            config->run->clock,
+            config->run->DataType
+        );
+        if(error != AD5940ERR_OK) return error;
 
-    error = AD5940_ELECTROCHEMICAL_config_lpdac_lptia_adc(
-        config->lpdac_cfg,
-        config->lptia_cfg,
-        config->dsp_cfg
-    );
-    if(error != AD5940ERR_OK) return error;
-
-    // Ensure it is cleared as ad5940.c relies on the INTC flag as well.
-    AD5940_INTCClrFlag(AFEINTSRC_ALLINT);
-
-    AGPIOCfg_Type agpio_cfg;
-    memcpy(&agpio_cfg, config->agpio_cfg, sizeof(AGPIOCfg_Type));
-    AD5940_set_INTCCfg_by_AGPIOCfg_Type(&agpio_cfg, AFEINTSRC_DATAFIFOTHRESH);
-    AD5940_AGPIOCfg(&agpio_cfg);
-
-    error = _start_wakeup_timer_sequence(
-        config->parameters,
-        config->FifoSrc,
-        config->LFOSC_frequency
-    );
-    if(error != AD5940ERR_OK) return error;
-
-    return error;
-}
-
-AD5940Err AD5940_ELECTROCHEMICAL_CV_start_with_LPDAC_HSTIA(
-    const AD5940_ELECTROCHEMICAL_CV_LPDAC_HSTIA_CONFIG *const config
-)
-{
-    AD5940Err error = AD5940ERR_OK;
-
-    error = AD5940_ELECTROCHEMICAL_CV_PARAMETERS_check(config->parameters);
-    if(error != AD5940ERR_OK) return error;
-
-    /* Wakeup AFE by read register, read 10 times at most */
-    if(AD5940_WakeUp(10) > 10) return AD5940ERR_WAKEUP;  /* Wakeup Failed */
-
-    /**
-     * Before the application begins, INT are used for configuring parameters.
-     * Therefore, they should not be used during the configuration process itself.
-     */
-    AD5940_clear_GPIO_and_INT_flag();
-
-    error = AD5940_ELECTROCHEMICAL_config_afe_lpdac_hstia(
-        config->afe_ref_cfg,
-        config->parameters->e_begin
-    );
-    if(error != AD5940ERR_OK) return error;
-
-    error = _write_sequence_commands(
-        config->parameters,
-        &(config->dsp_cfg->ADCFilterCfg),
-        &(config->dsp_cfg->DftCfg),
-        config->clock,
-        config->DataType
-    );
-    if(error != AD5940ERR_OK) return error;
-
-    error = AD5940_ELECTROCHEMICAL_config_lpdac_hstia_adc(
-        config->lpdac_cfg,
-        config->hstia_cfg,
-        config->dsp_cfg,
-        config->electrode_routing
-    );
-    if(error != AD5940ERR_OK) return error;
+        error = AD5940_ELECTROCHEMICAL_config_lpdac_hstia_adc(
+            config->lpdac_to_hstia->lpdac_cfg,
+            config->lpdac_to_hstia->hstia_cfg,
+            config->lpdac_to_hstia->dsp_cfg,
+            config->lpdac_to_hstia->electrode_routing
+        );
+        if(error != AD5940ERR_OK) return error;
+    }
+    else if(config->hsdac_mmr_to_hstia != NULL)
+    {
+        // TODO
+        return AD5940ERR_PARA;
+    }
+    else
+    {
+        return AD5940ERR_PARA;
+    }
 
     // Ensure it is cleared as ad5940.c relies on the INTC flag as well.
     AD5940_INTCClrFlag(AFEINTSRC_ALLINT);
 
     AGPIOCfg_Type agpio_cfg;
-    memcpy(&agpio_cfg, config->agpio_cfg, sizeof(AGPIOCfg_Type));
+    memcpy(&agpio_cfg, config->run->agpio_cfg, sizeof(AGPIOCfg_Type));
     AD5940_set_INTCCfg_by_AGPIOCfg_Type(&agpio_cfg, AFEINTSRC_DATAFIFOTHRESH);
     AD5940_AGPIOCfg(&agpio_cfg);
 
     error = _start_wakeup_timer_sequence(
         config->parameters,
-        config->FifoSrc,
-        config->LFOSC_frequency
+        config->run->FifoSrc,
+        config->run->LFOSC_frequency
     );
     if(error != AD5940ERR_OK) return error;
 

@@ -86,8 +86,7 @@ AD5940Err AD5940_map_ADCPGA(
  * Converts ADC data to current values.
  * adc_data and currents allow be the same pointer.
  * 
- * @param adc_data              Pointer to the ADC data retrieved from the FIFO.
- * @param adc_data_length       Number of ADC data points.
+ * @param adc_data              The ADC data retrieved from the FIFO.
  * @param RtiaCalValue          Pointer to the RTIA calibration result. Available after calibration:
  *                              - @ref AD5940_HSRtiaCal
  *                              - @ref AD5940_LPRtiaCal
@@ -97,31 +96,28 @@ AD5940Err AD5940_map_ADCPGA(
  * 
  * @return AD5940Err Error code indicating the success or failure of the operation.
  */
-AD5940Err AD5940_convert_adcs_to_currents(
-    const uint32_t *const adc_data, 
-    const uint16_t adc_data_length, 
+AD5940Err AD5940_convert_adc_to_current(
+    const uint32_t adc_data, 
     const fImpPol_Type *const RtiaCalValue,
     const uint32_t ADC_PGA_gain,
     const float ADC_reference_volt,
-    int32_t *const currents
+    int32_t *const current
 );
 
 /**
  * Converts ADC data to temperature values.
  * adc_data and temperatures allow be the same pointer.
  * 
- * @param adc_data              Pointer to the ADC data retrieved from the FIFO.
- * @param adc_data_length       Number of ADC data points.
+ * @param adc_data              The ADC data retrieved from the FIFO.
  * @param ADCPGA_Const          ADC PGA gain configuration constant. See @ref ADCPGA_Const.
  * @param temperatures          Pointer to store the resulting temperature values (in microdegrees Celsius).
  * 
  * @return AD5940Err Error code indicating the success or failure of the operation.
  */
-AD5940Err AD5940_convert_adcs_to_temperatures(
-    const uint32_t *const adc_data, 
-    const uint16_t adc_data_length,
+AD5940Err AD5940_convert_adc_to_temperature(
+    const uint32_t adc_data, 
     const uint32_t ADCPGA_Const,
-    int32_t *const temperatures
+    int32_t *const temperature
 );
 
 #ifdef __cplusplus

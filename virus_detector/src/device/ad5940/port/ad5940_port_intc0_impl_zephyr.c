@@ -1,28 +1,35 @@
 #include "ad5940_port_intc0_impl_zephyr.h"
 
-#include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
-
-#include <dk_buttons_and_leds.h>
-#define AD5940_GPIO7_MASK DK_BTN1_MSK
+#include "gpio_debounce.h"
 
 #include "ad5940_lock.h"
+#include "ad5940_port_gpio.h"
 
-void button_changed(uint32_t button_state, uint32_t has_changed)
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(ad5940_intc0, LOG_LEVEL_INF);
+
+static void ad5940_intc0_triggered(void)
 {
-	uint32_t buttons = button_state & has_changed;
-
-	if (buttons & AD5940_GPIO7_MASK) {
-		ad5940_afeintc0_lock_boardcast();
-	}
+    ad5940_afeintc0_lock_boardcast();
 }
 
 int AD5940_intc0_impl_zephyr_init(void)
 {
-	int err = 0;
+    int ret;
 
-    err = dk_buttons_init(button_changed);
-	if (err) return err;
+    ret = z_impl_gpio_debounce_init(
+        &ad5940_gpio7_ctx,
+        &ad5940_gpio7,
+        GPIO_INPUT,
+        K_MSEC(20),
+        NULL,
+        ad5940_intc0_triggered
+    );
+    if (ret) {
+        LOG_ERR("GPIO device not ready");
+        return -ENODEV;
+    }
 
-    return err;
+    return ret;
 }

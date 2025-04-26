@@ -35,7 +35,8 @@
 
 / {
 	zephyr,user {
-		ad5941-cs-gpios = <&gpio0 4 0>;
+		ad5940-gpio7-gpios = <&gpio0 4 0>;
+		ad5940-cs-gpios = <&gpio0 14 0>;
 		pump-gpios = <&gpio0 28 0>;
 		fan-gpios = <&gpio0 29 0>;
 		solenoid-valve-gpios = <&gpio0 30 0>;

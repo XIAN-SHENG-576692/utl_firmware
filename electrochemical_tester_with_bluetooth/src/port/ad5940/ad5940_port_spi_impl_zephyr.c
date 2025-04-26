@@ -22,7 +22,7 @@ static const struct device *const spi_1_device = DEVICE_DT_GET(
 );
 
 static const struct gpio_dt_spec spi_1_cs = GPIO_DT_SPEC_GET(
-	DT_PATH(zephyr_user), 
+	ZEPHYR_USER_PATH, 
 	ad5940_cs_gpios
 );
 

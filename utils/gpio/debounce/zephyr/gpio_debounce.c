@@ -7,7 +7,7 @@
 
 LOG_MODULE_REGISTER(zephyr_gpio_debounced_interrupt, LOG_LEVEL_INF);
 
-static void debounce_handler(struct k_work *w)
+static void _debounce_handler(struct k_work *w)
 {
     struct k_work_delayable *work_delayable = CONTAINER_OF(w, struct k_work_delayable, work);
     gpio_debounce_ctx_t *ctx = CONTAINER_OF(work_delayable, gpio_debounce_ctx_t, debounce_work);
@@ -31,7 +31,7 @@ static void debounce_handler(struct k_work *w)
     gpio_pin_interrupt_configure_dt(ctx->gpio_dt, GPIO_INT_EDGE_BOTH);
 }
 
-static void gpio_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+static void _gpio_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
     gpio_debounce_ctx_t *ctx = CONTAINER_OF(cb, gpio_debounce_ctx_t, gpio_cb);
     gpio_pin_interrupt_configure_dt(ctx->gpio_dt, GPIO_INT_DISABLE);
@@ -66,10 +66,10 @@ int z_impl_gpio_debounce_init(gpio_debounce_ctx_t *ctx,
     ctx->falling_edge_callback = falling_edge_callback;
     ctx->last_state = gpio_pin_get_dt(gpio_dt);
 
-    gpio_init_callback(&ctx->gpio_cb, gpio_isr, BIT(gpio_dt->pin));
+    gpio_init_callback(&ctx->gpio_cb, _gpio_isr, BIT(gpio_dt->pin));
     gpio_add_callback(gpio_dt->port, &ctx->gpio_cb);
 
-    k_work_init_delayable(&ctx->debounce_work, debounce_handler);
+    k_work_init_delayable(&ctx->debounce_work, _debounce_handler);
 
     LOG_INF("GPIO debounce context initialized");
 

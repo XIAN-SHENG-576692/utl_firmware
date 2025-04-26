@@ -5,7 +5,7 @@
 #include <zephyr/drivers/spi.h>
 #include "driver_gpio_impl_zephyr.h"
 
-#include "zephyr_spi.h"
+#include "spi.h"
 
 static const struct spi_config spi_1_cfg = {
 	.operation = 
@@ -22,20 +22,20 @@ static const struct device *const spi_1_device = DEVICE_DT_GET(
 );
 
 static const struct gpio_dt_spec spi_1_cs = GPIO_DT_SPEC_GET(
-	DT_PATH(zephyr_user), 
-	ad5941_cs_gpios
+	ZEPHYR_USER_PATH, 
+	ad5940_cs_gpios
 );
 
 int AD5940_spi_impl_zephyr_init(void)
 {
     int err = 0;
 
-	err = zephyr_spi_device_init(spi_1_device);
+	err = z_impl_spi_device_init(spi_1_device);
 	if(err)
 	{
 		return err;
 	}
-	err = zephyr_spi_cs_init(&spi_1_cs);
+	err = z_impl_spi_cs_init(&spi_1_cs);
 	if(err)
 	{
 		return err;
@@ -46,19 +46,19 @@ int AD5940_spi_impl_zephyr_init(void)
 
 void AD5940_CsSet(void)
 {
-    zephyr_spi_cs_select(&spi_1_cs, true);
+    z_impl_spi_cs_select(&spi_1_cs, true);
 	return;
 }
 
 void AD5940_CsClr(void)
 {
-    zephyr_spi_cs_select(&spi_1_cs, false);
+    z_impl_spi_cs_select(&spi_1_cs, false);
 	return;
 }
 
 void AD5940_ReadWriteNBytes(unsigned char *pSendBuffer, unsigned char *pRecvBuff, unsigned long length)
 {
-	zephyr_spi_transfer(
+	z_impl_spi_transfer(
 		spi_1_device,
 		&spi_1_cfg, 
 		&spi_1_done_sig, 

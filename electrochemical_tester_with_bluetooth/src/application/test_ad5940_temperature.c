@@ -29,9 +29,8 @@ AD5940Err test_ad5940_start_temperature(
 	);
 	if(error) return error;
 
-	error = AD5940_convert_adcs_to_temperatures(
-		&MCU_FIFO_buffer,
-		fifo_length, 
+	error = AD5940_convert_adc_to_temperature(
+		MCU_FIFO_buffer,
 		TEST_AD5940_TEMPERATURE_ADCPga,
 		temperature
 	);

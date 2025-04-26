@@ -101,38 +101,33 @@ AD5940Err AD5940_map_ADCPGA(
     return AD5940ERR_PARA;
 }
 
-AD5940Err AD5940_convert_adcs_to_currents(
-    const uint32_t *const adc_data,
-    const uint16_t adc_data_length, 
+AD5940Err AD5940_convert_adc_to_current(
+    const uint32_t adc_data,
     const fImpPol_Type *const RtiaCalValue,
     const uint32_t ADCPga,
     const float VRef1p82,
-    int32_t *const currents
+    int32_t *const current
 )
 {
     if(!IS_ADCPGA(ADCPga)) return AD5940ERR_PARA;
-    for(size_t i=0; i<adc_data_length; i++)
-    {
-        currents[i] = (int32_t) (
-            (
-                AD5940_ADCCode2Volt(
-                    adc_data[i] & 0xFFFF, 
-                    ADCPga, 
-                    VRef1p82
-                ) 
-                / RtiaCalValue->Magnitude
-            )
-            * 1e9f
-        );
-    }
+    *current = (int32_t) (
+        (
+            AD5940_ADCCode2Volt(
+                adc_data & 0xFFFF, 
+                ADCPga, 
+                VRef1p82
+            ) 
+            / RtiaCalValue->Magnitude
+        )
+        * 1e9f
+    );
     return AD5940ERR_OK;
 }
 
-AD5940Err AD5940_convert_adcs_to_temperatures(
-    const uint32_t *const adc_data, 
-    const uint16_t adc_data_length,
+AD5940Err AD5940_convert_adc_to_temperature(
+    const uint32_t adc_data, 
     const uint32_t ADCPGA_Const,
-    int32_t *const temperatures
+    int32_t *const temperature
 )
 {
     #define K 8.13f
@@ -142,11 +137,8 @@ AD5940Err AD5940_convert_adcs_to_temperatures(
         &adcpga_float
     );
     if(error != AD5940ERR_OK) return AD5940ERR_PARA;
-    for(int i=0; i<adc_data_length; i++)
-    {
-        temperatures[i] = adc_data[i] & 0xffff;
-        temperatures[i] -= 0x8000;	// data from SINC2 is added 0x8000, while data from register TEMPSENSDAT has no 0x8000 offset.
-        temperatures[i] = (temperatures[i] / K / adcpga_float - 273.15f) * 1e6f;
-    }
+    *temperature = adc_data & 0xffff;
+    *temperature -= 0x8000;	// data from SINC2 is added 0x8000, while data from register TEMPSENSDAT has no 0x8000 offset.
+    *temperature = (*temperature / K / adcpga_float - 273.15f) * 1e6f;
     return AD5940ERR_OK;
 }

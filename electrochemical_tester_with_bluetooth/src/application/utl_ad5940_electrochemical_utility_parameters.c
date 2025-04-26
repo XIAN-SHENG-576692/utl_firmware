@@ -2,6 +2,9 @@
 
 #include "utl_ad5940_electrochemical_parameters.h"
 
+#include "ad5940_hardware.h"
+#include "test_ad5940_parameters.h"
+
 AD5940_ELECTROCHEMICAL_AFERefCfg_Type utl_ad5940_electrochemical_utility_AFERefCfg_Type = {
 };
 
@@ -55,3 +58,34 @@ AD5940_ELECTROCHEMICAL_DSPCfg_Type utl_ad5940_electrochemical_utility_DSPCfg_Typ
     },
     .StatCfg = {0},
 };
+
+/**
+ * You need to set the following parameters:
+ * - LFOSC_frequency
+ */
+AD5940_ELECTROCHEMICAL_RUN_CONFIG ad5940_electrochemical_run_config = {
+    .agpio_cfg = &AD5940_EXTERNAL_agpio_cfg,
+    .clock = &test_ad5940_parameters_clockConfig,
+    .DataType = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_DataType,
+    .FifoSrc = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_FifoSrc,
+};
+
+AD5940_ELECTROCHEMICAL_LPDAC_TO_LPTIA_CONFIG ad5940_electrochemical_lpdac_to_lptia_config = {
+    .afe_ref_cfg = &utl_ad5940_electrochemical_utility_AFERefCfg_Type,
+    .dsp_cfg = &utl_ad5940_electrochemical_utility_DSPCfg_Type,
+    .lpdac_cfg = &utl_ad5940_electrochemical_utility_LPPACfg_Type,
+    .lptia_cfg = &utl_ad5940_electrochemical_utility_LPTIACfg_Type,
+};
+
+/**
+ * You need to set the following parameters:
+ * - electrode_routing
+ */
+AD5940_ELECTROCHEMICAL_LPDAC_TO_HSTIA_CONFIG ad5940_electrochemical_lpdac_to_hstia_config = {
+    .afe_ref_cfg = &utl_ad5940_electrochemical_utility_AFERefCfg_Type,
+    .dsp_cfg = &utl_ad5940_electrochemical_utility_DSPCfg_Type,
+    .lpdac_cfg = &utl_ad5940_electrochemical_utility_LPPACfg_Type,
+    .hstia_cfg = &utl_ad5940_electrochemical_utility_HSTIACfg_Type,
+};
+
+AD5940_ELECTROCHEMICAL_HSDAC_MMR_TO_HSTIA_CONFIG ad5940_electrochemical_hsdac_mmr_to_hstia_config = {0};

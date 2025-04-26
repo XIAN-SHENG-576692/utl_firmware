@@ -8,18 +8,22 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(virus_detector)
 
-set(UTILS_DIR ../utils)
+get_filename_component(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR} ABSOLUTE)
+set(UTILS_DIR ${PROJECT_DIR}/../utils)
+
 add_subdirectory(${UTILS_DIR}/ble ble)
 target_link_libraries(app PRIVATE ble_simple)
 
 add_definitions(-DCHIPSEL_594X)
-add_subdirectory(${UTILS_DIR}/ic/ad5940 ad5940)
-# target_link_libraries(app PRIVATE ad5940)
-
-add_subdirectory(${UTILS_DIR}/adapter/electrochemical_to_ad5940 electrochemical_to_ad5940)
+set(AD5940_DIR ${UTILS_DIR}/ic/ad5940)
+include(${AD5940_DIR}/cmake/ad5940.cmake)
+import_ad5940(app ${AD5940_DIR})
 
 add_subdirectory(${UTILS_DIR}/kernel_sleep kernel_sleep)
 target_link_libraries(app PRIVATE kernel_sleep)
+
+add_subdirectory(${UTILS_DIR}/gpio gpio)
+target_link_libraries(app PRIVATE gpio)
 
 add_subdirectory(${UTILS_DIR}/spi spi)
 target_link_libraries(app PRIVATE spi)
@@ -28,6 +32,7 @@ target_link_libraries(app PRIVATE spi)
 target_sources(app PRIVATE
   ./src/main.c
   ./src/device/ad5940/port/ad5940_port_delay.c
+  ./src/device/ad5940/port/ad5940_port_gpio.c
   ./src/device/ad5940/port/ad5940_port_intc0_impl_zephyr.c
   ./src/device/ad5940/port/ad5940_port_intc1_impl_zephyr.c
   ./src/device/ad5940/port/ad5940_port_reset_impl_zephyr.c

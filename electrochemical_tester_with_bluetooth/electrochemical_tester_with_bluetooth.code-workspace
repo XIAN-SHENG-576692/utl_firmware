@@ -46,7 +46,21 @@
 			"test_ad5940_init.h": "c",
 			"compare": "c",
 			"ad5940_utils_hsdac.h": "c",
-			"ad5940_utils_fifo.h": "c"
+			"ad5940_utils_fifo.h": "c",
+			"ad5940.h": "c",
+			"ad5940_electrochemical_dpv_function.h": "c",
+			"ad5940_electrochemical_utils.h": "c",
+			"test_ad5940_parameters.h": "c",
+			"ad5940_hardware.h": "c",
+			"test_ad5940_electrochemical_parameters.h": "c",
+			"test_ad5940_electrochemical_calibration_result.h": "c",
+			"utl_ad5940_electrochemical_parameters.h": "c",
+			"utl_ad5940_electrochemical_utility_parameters.h": "c",
+			"ad5940_electrochemical_ca_struct.h": "c",
+			"ad5940_electrochemical_utils_loop.h": "c",
+			"ad5940_electrochemical_utils_run.h": "c",
+			"ad5940_utils_gpio.h": "c",
+			"test_ad5940_electrochemical_ca.h": "c"
 		}
 	}
 }

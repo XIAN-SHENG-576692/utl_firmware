@@ -3,13 +3,16 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(utl_all_in_one)
 
-set(UTILS_DIR ../utils)
+get_filename_component(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR} ABSOLUTE)
+set(UTILS_DIR ${PROJECT_DIR}/../utils)
+
 add_subdirectory(${UTILS_DIR}/ble ble)
 target_link_libraries(app PRIVATE ble_simple)
 
 add_definitions(-DCHIPSEL_594X)
-add_subdirectory(${UTILS_DIR}/ic/ad5940 ad5940)
-# target_link_libraries(app PRIVATE ad5940)
+set(AD5940_DIR ${UTILS_DIR}/ic/ad5940)
+include(${AD5940_DIR}/cmake/ad5940.cmake)
+import_ad5940(app ${AD5940_DIR})
 
 add_subdirectory(${UTILS_DIR}/kernel_sleep kernel_sleep)
 target_link_libraries(app PRIVATE kernel_sleep)

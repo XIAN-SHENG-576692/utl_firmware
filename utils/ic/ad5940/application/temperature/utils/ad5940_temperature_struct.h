@@ -38,7 +38,7 @@ typedef struct
     float LFOSC_frequency;                          /**< Low-frequency oscillator frequency, used for internal timing. 
                                                         Obtainable via @ref AD5940_LFOSCMeasure in library/ad5940.h.*/
 
-    const AD5940_ClockConfig *clock;        /**< Clock configuration. Obtainable via 
+    const AD5940_ClockConfig *clock;                /**< Clock configuration. Obtainable via 
                                                         @ref AD5940_set_active_power 
                                                         in utility/ad5940_utility_power.h. */
 

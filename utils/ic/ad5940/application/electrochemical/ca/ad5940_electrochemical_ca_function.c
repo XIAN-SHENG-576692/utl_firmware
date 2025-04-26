@@ -60,8 +60,8 @@ static AD5940Err _start_wakeup_timer_sequence(
  * This function is based on the example in the AppCHRONOAMPInit() function found in
  * ad5940-examples/examples/AD5940_ChronoAmperometric/ChronoAmperometric.c.
  */
-AD5940Err AD5940_ELECTROCHEMICAL_CA_start_with_LPDAC_LPTIA(
-    const AD5940_ELECTROCHEMICAL_CA_LPDAC_LPTIA_CONFIG *const config
+AD5940Err AD5940_ELECTROCHEMICAL_CA_start(
+    const AD5940_ELECTROCHEMICAL_CA_CONFIG *const config
 )
 {
     AD5940Err error = AD5940ERR_OK;
@@ -78,108 +78,76 @@ AD5940Err AD5940_ELECTROCHEMICAL_CA_start_with_LPDAC_LPTIA(
      */
     AD5940_clear_GPIO_and_INT_flag();
 
-    error = AD5940_ELECTROCHEMICAL_config_afe_lpdac_lptia(
-        config->afe_ref_cfg,
-        config->parameters->e_dc
-    );
-    if(error != AD5940ERR_OK) return error;
+    if(config->lpdac_to_lptia != NULL)
+    {
+        error = AD5940_ELECTROCHEMICAL_config_afe_lpdac_lptia(
+            config->lpdac_to_lptia->afe_ref_cfg,
+            config->parameters->e_dc
+        );
+        if(error != AD5940ERR_OK) return error;
+    
+        error = _write_sequence_commands(
+            &(config->lpdac_to_lptia->dsp_cfg->ADCFilterCfg),
+            &(config->lpdac_to_lptia->dsp_cfg->DftCfg),
+            config->run->clock,
+            config->run->DataType
+        );
+        if(error != AD5940ERR_OK) return error;
 
-    error = _write_sequence_commands(
-        &(config->dsp_cfg->ADCFilterCfg),
-        &(config->dsp_cfg->DftCfg),
-        config->clock,
-        config->DataType
-    );
-    if(error != AD5940ERR_OK) return error;
+        error = AD5940_ELECTROCHEMICAL_config_lpdac_lptia_adc(
+            config->lpdac_to_lptia->lpdac_cfg,
+            config->lpdac_to_lptia->lptia_cfg,
+            config->lpdac_to_lptia->dsp_cfg
+        );
+        if(error != AD5940ERR_OK) return error;
+    }
+    else if(config->lpdac_to_hstia != NULL)
+    {
+        error = AD5940_ELECTROCHEMICAL_config_afe_lpdac_hstia(
+            config->lpdac_to_hstia->afe_ref_cfg,
+            config->parameters->e_dc
+        );
+        if(error != AD5940ERR_OK) return error;
+    
+        error = _write_sequence_commands(
+            &(config->lpdac_to_hstia->dsp_cfg->ADCFilterCfg),
+            &(config->lpdac_to_hstia->dsp_cfg->DftCfg),
+            config->run->clock,
+            config->run->DataType
+        );
+        if(error != AD5940ERR_OK) return error;
 
-    error = AD5940_ELECTROCHEMICAL_config_lpdac_lptia_adc(
-        config->lpdac_cfg,
-        config->lptia_cfg,
-        config->dsp_cfg
-    );
-    if(error != AD5940ERR_OK) return error;
+        error = AD5940_ELECTROCHEMICAL_config_lpdac_hstia_adc(
+            config->lpdac_to_hstia->lpdac_cfg,
+            config->lpdac_to_hstia->hstia_cfg,
+            config->lpdac_to_hstia->dsp_cfg,
+            config->lpdac_to_hstia->electrode_routing
+        );
+        if(error != AD5940ERR_OK) return error;
+    }
+    else if(config->hsdac_mmr_to_hstia != NULL)
+    {
+        // TODO
+        return AD5940ERR_PARA;
+    }
+    else
+    {
+        return AD5940ERR_PARA;
+    }
 
     // Ensure it is cleared as ad5940.c relies on the INTC flag as well.
     AD5940_INTCClrFlag(AFEINTSRC_ALLINT);
 
     AGPIOCfg_Type agpio_cfg;
-    memcpy(&agpio_cfg, config->agpio_cfg, sizeof(AGPIOCfg_Type));
+    memcpy(&agpio_cfg, config->run->agpio_cfg, sizeof(AGPIOCfg_Type));
     AD5940_set_INTCCfg_by_AGPIOCfg_Type(&agpio_cfg, AFEINTSRC_DATAFIFOTHRESH);
     AD5940_AGPIOCfg(&agpio_cfg);
 
     error = _start_wakeup_timer_sequence(
         config->parameters,
         config->fifo_thresh,
-        config->FifoSrc,
-        config->LFOSC_frequency
-    );
-    if(error != AD5940ERR_OK) return error;
-
-    return error;
-}
-
-/**
- * This function is based on the example in the AppCHRONOAMPInit() function and 
- * AppCHRONOAMPCtrl() function found in
- * ad5940-examples/examples/AD5940_ChronoAmperometric/ChronoAmperometric.c.
- * 
- * However, the official example code uses LPDAC, LPTIA, and LPADC for electrochemical measurements, 
- * which does not support switching between different working electrode_routing. 
- * Therefore, we need to modify it to use HSTIA instead.
- */
-AD5940Err AD5940_ELECTROCHEMICAL_CA_start_with_LPDAC_HSTIA(
-    const AD5940_ELECTROCHEMICAL_CA_LPDAC_HSTIA_CONFIG *const config
-)
-{
-    AD5940Err error = AD5940ERR_OK;
-
-    error = AD5940_ELECTROCHEMICAL_CA_PARAMETERS_check(config->parameters);
-    if(error != AD5940ERR_OK) return error;
-
-    /* Wakeup AFE by read register, read 10 times at most */
-    if(AD5940_WakeUp(10) > 10) return AD5940ERR_WAKEUP;  /* Wakeup Failed */
-
-    /**
-     * Before the application begins, INT are used for configuring parameters.
-     * Therefore, they should not be used during the configuration process itself.
-     */
-    AD5940_clear_GPIO_and_INT_flag();
-
-    error = AD5940_ELECTROCHEMICAL_config_afe_lpdac_hstia(
-        config->afe_ref_cfg,
-        config->parameters->e_dc
-    );
-    if(error != AD5940ERR_OK) return error;
-
-    error = _write_sequence_commands(
-        &(config->dsp_cfg->ADCFilterCfg),
-        &(config->dsp_cfg->DftCfg),
-        config->clock,
-        config->DataType
-    );
-    if(error != AD5940ERR_OK) return error;
-
-    error = AD5940_ELECTROCHEMICAL_config_lpdac_hstia_adc(
-        config->lpdac_cfg,
-        config->hstia_cfg,
-        config->dsp_cfg,
-        config->electrode_routing
-    );
-    if(error != AD5940ERR_OK) return error;
-
-    // Ensure it is cleared as ad5940.c relies on the INTC flag as well.
-    AD5940_INTCClrFlag(AFEINTSRC_ALLINT);
-
-    AGPIOCfg_Type agpio_cfg;
-    memcpy(&agpio_cfg, config->agpio_cfg, sizeof(AGPIOCfg_Type));
-    AD5940_set_INTCCfg_by_AGPIOCfg_Type(&agpio_cfg, AFEINTSRC_DATAFIFOTHRESH);
-    AD5940_AGPIOCfg(&agpio_cfg);
-
-    error = _start_wakeup_timer_sequence(
-        config->parameters,
-        config->fifo_thresh,
-        config->FifoSrc,
-        config->LFOSC_frequency
+        config->run->FifoSrc,
+        config->run->LFOSC_frequency
     );
     if(error != AD5940ERR_OK) return error;
 

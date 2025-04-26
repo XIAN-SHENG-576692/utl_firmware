@@ -7,78 +7,32 @@ extern "C"
 
 #include "ad5940_electrochemical_ca_struct.h"
 
+#include "ad5940_electrochemical_utils_loop.h"
+#include "ad5940_electrochemical_utils_run.h"
+
 /**
- * @brief Configuration for Chronoamperometry (CA) using LPTIA.
+ * @brief Configuration structure for Chronoamperometry (CA).
+ * 
+ * This structure allows the user to configure the parameters and signal paths 
+ * required for performing electrochemical CA measurements.
+ * 
+ * Only one signal path should be specified among the following options:
+ * - lpdac_to_lptia
+ * - lpdac_to_hstia
+ * - hsdac_mmr_to_hstia
+ * 
+ * The selected path determines the loop used to perform the electrochemical operation.
  */
 typedef struct 
 {
-    const AD5940_ELECTROCHEMICAL_CA_PARAMETERS *parameters;     /**< Pointer to the CA parameters. */
+    const AD5940_ELECTROCHEMICAL_CA_PARAMETERS *parameters;                    /**< DPV parameter settings */
     uint16_t fifo_thresh; /**< Sets a new FIFO threshold. */
-
-    float LFOSC_frequency;  /**< Low-frequency oscillator frequency, used for internal timing. 
-                                 Obtainable via @ref AD5940_LFOSCMeasure in library/ad5940.h.*/
-                                                        
-    const AD5940_ClockConfig *clock;    /**< Pointer to clock configuration.
-                                                     Obtainable via 
-                                                     @ref AD5940_set_active_power 
-                                                     in utility/ad5940_utility_power.h. */
-
-    const AGPIOCfg_Type *agpio_cfg;     /**< Pointer to GPIO configuration. 
-                                             - Refer to datasheet pages 112 and 122.
-                                             - Configure GPIO for interrupts based on PCB design. */
-
-    const AD5940_ELECTROCHEMICAL_AFERefCfg_Type *afe_ref_cfg;    /**< Pointer to AFE reference configuration. */
-    const AD5940_ELECTROCHEMICAL_LPDACfg_Type *lpdac_cfg;        /**< Pointer to LPPA configuration. */
-    const AD5940_ELECTROCHEMICAL_LPTIACfg_Type *lptia_cfg;      /**< Pointer to LPTIA configuration. */
-    const AD5940_ELECTROCHEMICAL_DSPCfg_Type *dsp_cfg;      /**< Pointer to DSP configuration. */
-
-    uint32_t DataType; /**< Data type configuration. @ref DATATYPE_Const. */
-    uint32_t FifoSrc;  /**< FIFO source configuration. @ref FIFOSRC_Const*/
+    const AD5940_ELECTROCHEMICAL_RUN_CONFIG *run;                               /**< Execution and timing configuration */
+    const AD5940_ELECTROCHEMICAL_LPDAC_TO_LPTIA_CONFIG *lpdac_to_lptia;         /**< Configuration for LPDAC to LPTIA path */
+    const AD5940_ELECTROCHEMICAL_LPDAC_TO_HSTIA_CONFIG *lpdac_to_hstia;         /**< Configuration for LPDAC to HSTIA path */
+    const AD5940_ELECTROCHEMICAL_HSDAC_MMR_TO_HSTIA_CONFIG *hsdac_mmr_to_hstia; /**< Configuration for HSDAC via MMR to HSTIA path */
 } 
-AD5940_ELECTROCHEMICAL_CA_LPDAC_LPTIA_CONFIG;
-
-/**
- * @brief Starts the Chronoamperometry (CA) operation using LPTIA configuration.
- * 
- * @param config Pointer to the LPTIA CA configuration structure.
- * 
- * @return AD5940Err Error code indicating success (0) or failure.
- */
-AD5940Err AD5940_ELECTROCHEMICAL_CA_start_with_LPDAC_LPTIA(
-    const AD5940_ELECTROCHEMICAL_CA_LPDAC_LPTIA_CONFIG *const config
-);
-
-/**
- * @brief Configuration for Chronoamperometry (CA) with a specified working electrode.
- */
-typedef struct 
-{
-    const AD5940_ELECTROCHEMICAL_CA_PARAMETERS *parameters;     /**< Pointer to the CA parameters. */
-    uint16_t fifo_thresh; /**< Sets a new FIFO threshold. */
-
-    const AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING *electrode_routing;
-
-    float LFOSC_frequency;  /**< Low-frequency oscillator frequency, used for internal timing. 
-                                 Obtainable via @ref AD5940_LFOSCMeasure in library/ad5940.h.*/
-                                                        
-    const AD5940_ClockConfig *clock;    /**< Pointer to clock configuration.
-                                                     Obtainable via 
-                                                     @ref AD5940_set_active_power 
-                                                     in utility/ad5940_utility_power.h. */
-
-    const AGPIOCfg_Type *agpio_cfg;     /**< Pointer to GPIO configuration. 
-                                             - Refer to datasheet pages 112 and 122.
-                                             - Configure GPIO for interrupts based on PCB design. */
-
-    const AD5940_ELECTROCHEMICAL_AFERefCfg_Type *afe_ref_cfg;    /**< Pointer to AFE reference configuration. */
-    const AD5940_ELECTROCHEMICAL_LPDACfg_Type *lpdac_cfg;        /**< Pointer to LPPA configuration. */
-    const AD5940_ELECTROCHEMICAL_HSTIACfg_Type *hstia_cfg;      /**< Pointer to HSTIA configuration. */
-    const AD5940_ELECTROCHEMICAL_DSPCfg_Type *dsp_cfg;      /**< Pointer to DSP configuration. */
-
-    uint32_t DataType; /**< Data type configuration. @ref DATATYPE_Const. */
-    uint32_t FifoSrc;  /**< FIFO source configuration. @ref FIFOSRC_Const*/
-} 
-AD5940_ELECTROCHEMICAL_CA_LPDAC_HSTIA_CONFIG;
+AD5940_ELECTROCHEMICAL_CA_CONFIG;
 
 /**
  * @brief Starts the Chronoamperometry (CA) operation.
@@ -87,8 +41,8 @@ AD5940_ELECTROCHEMICAL_CA_LPDAC_HSTIA_CONFIG;
  * 
  * @return AD5940Err Error code indicating success (0) or failure.
  */
-AD5940Err AD5940_ELECTROCHEMICAL_CA_start_with_LPDAC_HSTIA(
-    const AD5940_ELECTROCHEMICAL_CA_LPDAC_HSTIA_CONFIG *const config
+AD5940Err AD5940_ELECTROCHEMICAL_CA_start(
+    const AD5940_ELECTROCHEMICAL_CA_CONFIG *const config
 );
 
 /**

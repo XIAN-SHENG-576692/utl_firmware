@@ -47,7 +47,6 @@ static AD5940Err result(
 	return AD5940ERR_OK;
 }
 
-static AD5940_ELECTROCHEMICAL_CV_LPDAC_LPTIA_CONFIG _config_with_LPDAC_LPTIA;
 AD5940Err test_ad5940_electrochemical_cv_with_LPDAC_LPTIA(
     const ELECTROCHEMICAL_CV *const parameters,
     const int16_t adc_buffer_max_length,
@@ -56,25 +55,23 @@ AD5940Err test_ad5940_electrochemical_cv_with_LPDAC_LPTIA(
 )
 {
 	AD5940Err error = AD5940ERR_OK;
-
+	
 	utl_ad5940_electrochemical_utility_HSTIACfg_Type.HstiaRtiaSel = test_ad5940_HstiaRtiaSel;
 	utl_ad5940_electrochemical_utility_DSPCfg_Type.ADCFilterCfg.ADCRate = test_ad5940_parameters_clockConfig.ADCRate;
+	ad5940_electrochemical_run_config.LFOSC_frequency = test_ad5940_LFOSC_frequency;
 
-	_config_with_LPDAC_LPTIA = (AD5940_ELECTROCHEMICAL_CV_LPDAC_LPTIA_CONFIG) {
+	*adc_buffer_length = 0;
+
+	AD5940_ELECTROCHEMICAL_CV_CONFIG _config = {
 		.parameters = &parameters->ad5940_parameters,
-		.agpio_cfg = &AD5940_EXTERNAL_agpio_cfg,
-		.clock = &test_ad5940_parameters_clockConfig,
-		.DataType = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_DataType,
-		.FifoSrc = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_FifoSrc,
-		.LFOSC_frequency = test_ad5940_LFOSC_frequency,
-		.afe_ref_cfg = &utl_ad5940_electrochemical_utility_AFERefCfg_Type,
-		.lpdac_cfg = &utl_ad5940_electrochemical_utility_LPPACfg_Type,
-		.lptia_cfg = &utl_ad5940_electrochemical_utility_LPTIACfg_Type,
-		.dsp_cfg = &utl_ad5940_electrochemical_utility_DSPCfg_Type,
+		.run = &ad5940_electrochemical_run_config,
+		.lpdac_to_lptia = &ad5940_electrochemical_lpdac_to_lptia_config,
+		.lpdac_to_hstia = NULL,
+		.hsdac_mmr_to_hstia = NULL,
 	};
 
-	error = AD5940_ELECTROCHEMICAL_CV_start_with_LPDAC_LPTIA(
-		&_config_with_LPDAC_LPTIA
+	error = AD5940_ELECTROCHEMICAL_CV_start(
+		&_config
 	);
 	if(error != AD5940ERR_OK) return error;
 
@@ -90,7 +87,6 @@ AD5940Err test_ad5940_electrochemical_cv_with_LPDAC_LPTIA(
 	return error;
 }
 
-static AD5940_ELECTROCHEMICAL_CV_LPDAC_HSTIA_CONFIG _config_with_LPDAC_HSTIA;
 AD5940Err test_ad5940_electrochemical_cv_with_LPDAC_HSTIA(
     const ELECTROCHEMICAL_CV *const parameters,
     const AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING *const electrode_routing,
@@ -100,26 +96,24 @@ AD5940Err test_ad5940_electrochemical_cv_with_LPDAC_HSTIA(
 )
 {
 	AD5940Err error = AD5940ERR_OK;
-
+	
 	utl_ad5940_electrochemical_utility_HSTIACfg_Type.HstiaRtiaSel = test_ad5940_HstiaRtiaSel;
 	utl_ad5940_electrochemical_utility_DSPCfg_Type.ADCFilterCfg.ADCRate = test_ad5940_parameters_clockConfig.ADCRate;
+	ad5940_electrochemical_run_config.LFOSC_frequency = test_ad5940_LFOSC_frequency;
+	ad5940_electrochemical_lpdac_to_hstia_config.electrode_routing = electrode_routing;
 
-	_config_with_LPDAC_HSTIA = (AD5940_ELECTROCHEMICAL_CV_LPDAC_HSTIA_CONFIG) {
+	*adc_buffer_length = 0;
+
+	AD5940_ELECTROCHEMICAL_CV_CONFIG _config = {
 		.parameters = &parameters->ad5940_parameters,
-		.electrode_routing = electrode_routing,
-		.agpio_cfg = &AD5940_EXTERNAL_agpio_cfg,
-		.clock = &test_ad5940_parameters_clockConfig,
-		.DataType = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_DataType,
-		.FifoSrc = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_FifoSrc,
-		.LFOSC_frequency = test_ad5940_LFOSC_frequency,
-		.afe_ref_cfg = &utl_ad5940_electrochemical_utility_AFERefCfg_Type,
-		.lpdac_cfg = &utl_ad5940_electrochemical_utility_LPPACfg_Type,
-		.hstia_cfg = &utl_ad5940_electrochemical_utility_HSTIACfg_Type,
-		.dsp_cfg = &utl_ad5940_electrochemical_utility_DSPCfg_Type,
+		.run = &ad5940_electrochemical_run_config,
+		.lpdac_to_lptia = NULL,
+		.lpdac_to_hstia = &ad5940_electrochemical_lpdac_to_hstia_config,
+		.hsdac_mmr_to_hstia = NULL,
 	};
 
-	error = AD5940_ELECTROCHEMICAL_CV_start_with_LPDAC_HSTIA(
-		&_config_with_LPDAC_HSTIA
+	error = AD5940_ELECTROCHEMICAL_CV_start(
+		&_config
 	);
 	if(error != AD5940ERR_OK) return error;
 

@@ -11,6 +11,8 @@ extern "C"
 #include "ad5940_electrochemical_utils_tia_adc.h"
 #include "ad5940_electrochemical_utils_sop.h"
 #include "ad5940_electrochemical_utils_potential.h"
+#include "ad5940_electrochemical_utils_loop.h"
+#include "ad5940_electrochemical_utils_run.h"
 
 #ifdef __cplusplus
 }

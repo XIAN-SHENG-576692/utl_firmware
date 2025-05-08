@@ -9,6 +9,11 @@ extern "C" {
 
 /**
  * @brief Context structure for GPIO debounce handling.
+ *
+ * This structure holds the internal state for GPIO debounce operations.
+ * 
+ * **Users do not need to manually initialize or modify the members inside.**
+ * All necessary fields will be automatically configured by `z_impl_gpio_debounce_init()`.
  */
 typedef struct {
     const struct gpio_dt_spec *gpio_dt;      /**< Pointer to GPIO device tree specification. */
@@ -28,11 +33,16 @@ typedef struct {
  * callbacks for rising and/or falling edges. This prevents bouncing
  * artifacts from triggering callbacks multiple times.
  *
- * @param ctx                  Pointer to debounce context structure.
- * @param gpio_dt              Pointer to GPIO device tree specification.
- * @param gpio_flag            GPIO configuration flags (e.g., GPIO_INPUT).
- * @param debounce_ms          Debounce duration (e.g., K_MSEC(20)).
- * @param rising_edge_callback Function to call on rising edge (can be NULL).
+ * **Important:**  
+ * - Users only need to provide a pointer to an uninitialized `gpio_debounce_ctx_t` structure.  
+ * - The function `z_impl_gpio_debounce_init()` will fully configure all necessary members of `ctx`.  
+ * - **Do not manually modify the `ctx` fields.**
+ * 
+ * @param ctx                   Pointer to an uninitialized debounce context structure.
+ * @param gpio_dt               Pointer to GPIO device tree specification.
+ * @param gpio_flag             GPIO configuration flags (e.g., GPIO_INPUT).
+ * @param debounce_ms           Debounce duration (e.g., K_MSEC(20)).
+ * @param rising_edge_callback  Function to call on rising edge (can be NULL).
  * @param falling_edge_callback Function to call on falling edge (can be NULL).
  *
  * @return 0 if successful, or a negative error code on failure.

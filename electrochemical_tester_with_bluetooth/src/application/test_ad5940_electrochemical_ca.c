@@ -67,9 +67,8 @@ AD5940Err test_ad5940_electrochemical_ca_with_LPDAC_LPTIA(
 		.parameters = &parameters->ad5940_parameters,
 		.fifo_thresh = FIFO_THRESH(parameters->ad5940_parameters.t_interval, parameters->t_run),
 		.run = &ad5940_electrochemical_run_config,
-		.lpdac_to_lptia = &ad5940_electrochemical_lpdac_to_lptia_config,
-		.lpdac_to_hstia = NULL,
-		.hsdac_mmr_to_hstia = NULL,
+		.path_type = 0,
+		.path.lpdac_to_lptia = &ad5940_electrochemical_lpdac_to_lptia_config,
 	};
 
 	error = AD5940_ELECTROCHEMICAL_CA_start(
@@ -107,9 +106,8 @@ AD5940Err test_ad5940_electrochemical_ca_with_LPDAC_HSTIA(
 		.parameters = &parameters->ad5940_parameters,
 		.fifo_thresh = FIFO_THRESH(parameters->ad5940_parameters.t_interval, parameters->t_run),
 		.run = &ad5940_electrochemical_run_config,
-		.lpdac_to_lptia = NULL,
-		.lpdac_to_hstia = &ad5940_electrochemical_lpdac_to_hstia_config,
-		.hsdac_mmr_to_hstia = NULL,
+		.path_type = 1,
+		.path.lpdac_to_hstia = &ad5940_electrochemical_lpdac_to_hstia_config,
 	};
 
 	error = AD5940_ELECTROCHEMICAL_CA_start(

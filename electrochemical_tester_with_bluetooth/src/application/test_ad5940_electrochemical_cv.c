@@ -65,9 +65,8 @@ AD5940Err test_ad5940_electrochemical_cv_with_LPDAC_LPTIA(
 	AD5940_ELECTROCHEMICAL_CV_CONFIG _config = {
 		.parameters = &parameters->ad5940_parameters,
 		.run = &ad5940_electrochemical_run_config,
-		.lpdac_to_lptia = &ad5940_electrochemical_lpdac_to_lptia_config,
-		.lpdac_to_hstia = NULL,
-		.hsdac_mmr_to_hstia = NULL,
+		.path_type = 0,
+		.path.lpdac_to_lptia = &ad5940_electrochemical_lpdac_to_lptia_config,
 	};
 
 	error = AD5940_ELECTROCHEMICAL_CV_start(
@@ -107,9 +106,8 @@ AD5940Err test_ad5940_electrochemical_cv_with_LPDAC_HSTIA(
 	AD5940_ELECTROCHEMICAL_CV_CONFIG _config = {
 		.parameters = &parameters->ad5940_parameters,
 		.run = &ad5940_electrochemical_run_config,
-		.lpdac_to_lptia = NULL,
-		.lpdac_to_hstia = &ad5940_electrochemical_lpdac_to_hstia_config,
-		.hsdac_mmr_to_hstia = NULL,
+		.path_type = 1,
+		.path.lpdac_to_hstia = &ad5940_electrochemical_lpdac_to_hstia_config,
 	};
 
 	error = AD5940_ELECTROCHEMICAL_CV_start(

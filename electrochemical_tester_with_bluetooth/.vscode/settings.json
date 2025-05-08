@@ -12,6 +12,8 @@
         "type_traits": "c",
         "utility": "c",
         "ad5940_port_spi_impl_zephyr.h": "c",
-        "ad5940_port_intc1_impl_zephyr.h": "c"
+        "ad5940_port_intc1_impl_zephyr.h": "c",
+        "ad5940_main.h": "c",
+        "types.h": "c"
     }
 }

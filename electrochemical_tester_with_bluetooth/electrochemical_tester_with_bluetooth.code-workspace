@@ -60,7 +60,10 @@
 			"ad5940_electrochemical_utils_loop.h": "c",
 			"ad5940_electrochemical_utils_run.h": "c",
 			"ad5940_utils_gpio.h": "c",
-			"test_ad5940_electrochemical_ca.h": "c"
+			"test_ad5940_electrochemical_ca.h": "c",
+			"init.h": "c",
+			"types.h": "c",
+			"ad5940_main.h": "c"
 		}
 	}
 }

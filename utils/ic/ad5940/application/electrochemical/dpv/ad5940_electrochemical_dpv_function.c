@@ -8,7 +8,7 @@
 #define DAC_STEP_SEQID SEQID_1
 #define DAC_PULSE_SEQID SEQID_2
 
-static float _get_e_step_real(
+static inline float _get_e_step_real(
     const AD5940_ELECTROCHEMICAL_DPV_PARAMETERS *const parameters
 )
 {
@@ -17,7 +17,7 @@ static float _get_e_step_real(
         : -parameters->e_step;
 }
 
-static float _get_e_pulse_real(
+static inline float _get_e_pulse_real(
     const AD5940_ELECTROCHEMICAL_DPV_PARAMETERS *const parameters
 )
 {
@@ -48,7 +48,7 @@ static inline uint16_t STEP_NUMBER(
     return (uint16_t)(intpart + 1.0f) * 2;
 }
 
-static float _get_voltage_at_index(
+static inline float _get_voltage_at_index(
     const AD5940_ELECTROCHEMICAL_DPV_PARAMETERS *const parameters,
     const uint16_t index,
     const float e_step_real,
@@ -242,62 +242,62 @@ AD5940Err AD5940_ELECTROCHEMICAL_DPV_start(
      */
     AD5940_clear_GPIO_and_INT_flag();
 
-    if(config->lpdac_to_lptia != NULL)
+    switch (config->path_type)
     {
+    case 0:
         error = AD5940_ELECTROCHEMICAL_config_afe_lpdac_lptia(
-            config->lpdac_to_lptia->afe_ref_cfg,
+            config->path.lpdac_to_lptia->afe_ref_cfg,
             config->parameters->e_begin
         );
         if(error != AD5940ERR_OK) return error;
-    
+
         error = _write_sequence_commands(
             config->parameters,
-            &(config->lpdac_to_lptia->dsp_cfg->ADCFilterCfg),
-            &(config->lpdac_to_lptia->dsp_cfg->DftCfg),
+            &(config->path.lpdac_to_lptia->dsp_cfg->ADCFilterCfg),
+            &(config->path.lpdac_to_lptia->dsp_cfg->DftCfg),
             config->run->clock,
             config->run->DataType
         );
         if(error != AD5940ERR_OK) return error;
 
         error = AD5940_ELECTROCHEMICAL_config_lpdac_lptia_adc(
-            config->lpdac_to_lptia->lpdac_cfg,
-            config->lpdac_to_lptia->lptia_cfg,
-            config->lpdac_to_lptia->dsp_cfg
+            config->path.lpdac_to_lptia->lpdac_cfg,
+            config->path.lpdac_to_lptia->lptia_cfg,
+            config->path.lpdac_to_lptia->dsp_cfg
         );
         if(error != AD5940ERR_OK) return error;
-    }
-    else if(config->lpdac_to_hstia != NULL)
-    {
+        break;
+    
+    case 1:
         error = AD5940_ELECTROCHEMICAL_config_afe_lpdac_hstia(
-            config->lpdac_to_hstia->afe_ref_cfg,
+            config->path.lpdac_to_hstia->afe_ref_cfg,
             config->parameters->e_begin
         );
         if(error != AD5940ERR_OK) return error;
-    
+
         error = _write_sequence_commands(
             config->parameters,
-            &(config->lpdac_to_hstia->dsp_cfg->ADCFilterCfg),
-            &(config->lpdac_to_hstia->dsp_cfg->DftCfg),
+            &(config->path.lpdac_to_hstia->dsp_cfg->ADCFilterCfg),
+            &(config->path.lpdac_to_hstia->dsp_cfg->DftCfg),
             config->run->clock,
             config->run->DataType
         );
         if(error != AD5940ERR_OK) return error;
 
         error = AD5940_ELECTROCHEMICAL_config_lpdac_hstia_adc(
-            config->lpdac_to_hstia->lpdac_cfg,
-            config->lpdac_to_hstia->hstia_cfg,
-            config->lpdac_to_hstia->dsp_cfg,
-            config->lpdac_to_hstia->electrode_routing
+            config->path.lpdac_to_hstia->lpdac_cfg,
+            config->path.lpdac_to_hstia->hstia_cfg,
+            config->path.lpdac_to_hstia->dsp_cfg,
+            config->path.lpdac_to_hstia->electrode_routing
         );
         if(error != AD5940ERR_OK) return error;
-    }
-    else if(config->hsdac_mmr_to_hstia != NULL)
-    {
+        break;
+    
+    case 2:
         // TODO
         return AD5940ERR_PARA;
-    }
-    else
-    {
+    
+    default:
         return AD5940ERR_PARA;
     }
 

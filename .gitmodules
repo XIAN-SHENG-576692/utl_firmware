@@ -1,4 +1,4 @@
 [submodule "utils/ic/ad5940"]
 	path = utils/ic/ad5940
 	url = https://github.com/XIAN-SHENG-576692/ad5940_applications.git
-	branch = main
+	branch = feature/specific_fifo_thresh

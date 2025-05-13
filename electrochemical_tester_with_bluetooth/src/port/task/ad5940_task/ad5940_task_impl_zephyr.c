@@ -14,25 +14,29 @@ K_MSGQ_DEFINE(_quene_adc, sizeof(AD5940_TASK_ADC_RESULT), MAX_QUEUE, 4);
 static K_MUTEX_DEFINE(_mutex_command_state);
 static K_MUTEX_DEFINE(_mutex_command_measurement_param);
 
-static K_MUTEX_DEFINE(_mutex_measurement_triggered);
-static K_CONDVAR_DEFINE(_condvar_measurement_triggered);
+static K_MUTEX_DEFINE(_mutex_command_measurement_triggered);
+static K_CONDVAR_DEFINE(_condvar_command_measurement_triggered);
 
 int AD5940_TASK_init_impl_zephyr(void)
 {
     int err = 0;
+
+    // ADC
     err = k_mutex_init(&_mutex_adc_state);
     if(err) return err;
     err = k_mutex_init(&_mutex_adc_length);
     if(err) return err;
 
+    // Command
     err = k_mutex_init(&_mutex_command_state);
     if(err) return err;
     err = k_mutex_init(&_mutex_command_measurement_param);
     if(err) return err;
-    err = k_mutex_init(&_mutex_measurement_triggered);
+    err = k_mutex_init(&_mutex_command_measurement_triggered);
     if(err) return err;
-    err = k_condvar_init(&_condvar_measurement_triggered);
+    err = k_condvar_init(&_condvar_command_measurement_triggered);
     if(err) return err;
+
     return 0;
 }
 
@@ -100,16 +104,16 @@ int AD5940_TASK_COMMAND_release_access_measurement_param_lock(void)
 
 int AD5940_TASK_COMMAND_wait_measurement(void)
 {
-    k_mutex_lock(&_mutex_measurement_triggered, K_FOREVER);
-    k_condvar_wait(&_condvar_measurement_triggered, &_mutex_measurement_triggered, K_FOREVER);
-    k_mutex_unlock(&_mutex_measurement_triggered);
+    k_mutex_lock(&_mutex_command_measurement_triggered, K_FOREVER);
+    k_condvar_wait(&_condvar_command_measurement_triggered, &_mutex_command_measurement_triggered, K_FOREVER);
+    k_mutex_unlock(&_mutex_command_measurement_triggered);
     return 0;
 }
 
 int AD5940_TASK_COMMAND_trigger_measurement(void)
 {
-    k_mutex_lock(&_mutex_measurement_triggered, K_FOREVER);
-    k_condvar_broadcast(&_condvar_measurement_triggered);
-    k_mutex_unlock(&_mutex_measurement_triggered);
+    k_mutex_lock(&_mutex_command_measurement_triggered, K_FOREVER);
+    k_condvar_broadcast(&_condvar_command_measurement_triggered);
+    k_mutex_unlock(&_mutex_command_measurement_triggered);
     return 0;
 }

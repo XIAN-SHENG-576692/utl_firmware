@@ -6,7 +6,7 @@ extern "C"
 #endif
 
 #include "stdint.h"
-#include "ad5940_application_command.h"
+#include "ad5940_task_command.h"
 
 typedef struct
 {
@@ -24,7 +24,7 @@ typedef struct
 
 typedef struct
 {
-    AD5940_APPLICATION_COMMAND_PARAM *ad5940_application_command_param;
+    AD5940_TASK_COMMAND_PARAM *ad5940_task_command_param;
 } COMMAND_RECEIVER_PARAM;
 
 typedef struct
@@ -33,7 +33,7 @@ typedef struct
     COMMAND_RECEIVER_PARAM param;
 } COMMAND_RECEIVER_CFG;
 
-int command_receiver_run(const COMMAND_RECEIVER_CFG *const cfg);
+int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg);
 
 typedef enum {
     COMMAND_RECEIVER_STATE_UNINITIALIZED,
@@ -42,7 +42,7 @@ typedef enum {
     COMMAND_RECEIVER_STATE_ERROR,
 } COMMAND_RECEIVER_STATE;
 
-COMMAND_RECEIVER_STATE command_receiver_get_state(void);
+COMMAND_RECEIVER_STATE COMMAND_RECEIVER_get_state(void);
 
 #ifdef __cplusplus
 }

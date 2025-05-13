@@ -87,45 +87,45 @@ static AD5940_ELECTROCHEMICAL_CALIBRATION_RESULTS ad5940_electrochemical_calibra
 };
 
 // ==================================================
-// AD5940 Application
+// AD5940 TASK
 
 #include "ad5940_hardware.h"
-#include "ad5940_application_impl_zephyr.h"
+#include "ad5940_task_impl_zephyr.h"
 
 // ADC
-#include "ad5940_application_adc.h"
+#include "ad5940_task_adc.h"
 
-static k_tid_t ad5940_application_adc_tid;
-static struct k_thread ad5940_application_adc_thread;
-K_THREAD_STACK_DEFINE(ad5940_application_adc_stack, 4096);
+static k_tid_t ad5940_task_adc_tid;
+static struct k_thread ad5940_task_adc_thread;
+K_THREAD_STACK_DEFINE(ad5940_task_adc_stack, 4096);
 
-AD5940_APPLICATION_ADC_CFG ad5940_application_adc_cfg = {
+AD5940_TASK_ADC_CFG ad5940_task_adc_cfg = {
 	.port = {
 		.wait_ad5940_intc_triggered = ad5940_intc0_lock_wait,
-		.get_access_state_lock = ad5940_application_adc_get_access_state_lock,
-		.release_access_state_lock = ad5940_application_adc_release_access_state_lock,
-		.get_access_length_lock = ad5940_application_adc_get_access_length_lock,
-		.release_access_length_lock = ad5940_application_adc_release_access_length_lock,
-		.put_quene = ad5940_application_adc_put_quene,
-		.take_quene = ad5940_application_adc_take_quene,
+		.get_access_state_lock = AD5940_TASK_ADC_get_access_state_lock,
+		.release_access_state_lock = AD5940_TASK_ADC_release_access_state_lock,
+		.get_access_length_lock = AD5940_TASK_ADC_get_access_length_lock,
+		.release_access_length_lock = AD5940_TASK_ADC_release_access_length_lock,
+		.put_quene = AD5940_TASK_ADC_put_quene,
+		.take_quene = AD5940_TASK_ADC_take_quene,
 	},
 };
 
 // Command
-#include "ad5940_application_command.h"
+#include "ad5940_task_command.h"
 
-static k_tid_t ad5940_application_command_tid;
-static struct k_thread ad5940_application_command_thread;
-K_THREAD_STACK_DEFINE(ad5940_application_command_stack, 16384);
+static k_tid_t ad5940_task_command_tid;
+static struct k_thread ad5940_task_command_thread;
+K_THREAD_STACK_DEFINE(ad5940_task_command_stack, 16384);
 
-AD5940_APPLICATION_COMMAND_CFG ad5940_application_command_cfg = {
+AD5940_TASK_COMMAND_CFG ad5940_task_command_cfg = {
 	.port = {
-		.get_access_state_lock = ad5940_application_command_get_access_state_lock,
-		.release_access_state_lock = ad5940_application_command_release_access_state_lock,
-		.get_access_measurement_param_lock = ad5940_application_command_get_access_measurement_param_lock,
-		.release_access_measurement_param_lock = ad5940_application_command_release_access_measurement_param_lock,
-		.trigger_measurement = ad5940_application_command_trigger_measurement,
-		.wait_measurement = ad5940_application_command_wait_measurement,
+		.get_access_state_lock = AD5940_TASK_COMMAND_get_access_state_lock,
+		.release_access_state_lock = AD5940_TASK_COMMAND_release_access_state_lock,
+		.get_access_measurement_param_lock = AD5940_TASK_COMMAND_get_access_measurement_param_lock,
+		.release_access_measurement_param_lock = AD5940_TASK_COMMAND_release_access_measurement_param_lock,
+		.trigger_measurement = AD5940_TASK_COMMAND_trigger_measurement,
+		.wait_measurement = AD5940_TASK_COMMAND_wait_measurement,
 	},
 	.param = {
 		.HstiaRtiaSel = MAIN_AD5940_HSTIARTIA,
@@ -191,13 +191,13 @@ int wait_command_received(
 
 COMMAND_RECEIVER_CFG command_receiver_cfg = {
 	.port = {
-		.get_access_state_lock = command_receiver_get_access_state_lock,
-		.release_access_state_lock = command_receiver_release_access_state_lock,
+		.get_access_state_lock = COMMAND_RECEIVER_get_access_state_lock,
+		.release_access_state_lock = COMMAND_RECEIVER_release_access_state_lock,
 		.send_response = BLE_SIMPLE_send_packet,
 		.wait_command_received = wait_command_received,
 	},
 	.param = {
-		.ad5940_application_command_param = &ad5940_application_command_cfg.param,
+		.ad5940_task_command_param = &ad5940_task_command_cfg.param,
 	},
 };
 
@@ -211,14 +211,14 @@ K_THREAD_STACK_DEFINE(ad5940_adc_sender_stack, 4096);
 int ad5940_adc_sender(void)
 {
 	int err;
-	AD5940_APPLICATION_ADC_RESULT result;
-	#define AD5940_ADC_SENDER_LENGTH (1 + 1 + sizeof(AD5940_APPLICATION_ADC_RESULT))
+	AD5940_TASK_ADC_RESULT result;
+	#define AD5940_ADC_SENDER_LENGTH (1 + 1 + sizeof(AD5940_TASK_ADC_RESULT))
 	uint8_t ble_packet[AD5940_ADC_SENDER_LENGTH];
 	ble_packet[0] = 0x02;
 	ble_packet[1] = 0x01;
 	for(;;)
 	{
-		err = ad5940_application_adc_take_result_quene(
+		err = AD5940_TASK_ADC_take_result_quene(
 			&result
 		);
 		memcpy(
@@ -282,38 +282,38 @@ int main(void)
 		if (err) return err;
 
 		// ==================================================
-		// AD5940 application
+		// AD5940 TASK
 
-		ad5940_application_init_impl_zephyr();
+		AD5940_TASK_init_impl_zephyr();
 
 		// ADC
-		ad5940_application_adc_tid = k_thread_create(
-			&ad5940_application_adc_thread,
-			ad5940_application_adc_stack,
-			K_THREAD_STACK_SIZEOF(ad5940_application_adc_stack),
-			ad5940_application_adc_run,
-			&ad5940_application_adc_cfg, NULL, NULL,
+		ad5940_task_adc_tid = k_thread_create(
+			&ad5940_task_adc_thread,
+			ad5940_task_adc_stack,
+			K_THREAD_STACK_SIZEOF(ad5940_task_adc_stack),
+			AD5940_TASK_ADC_run,
+			&ad5940_task_adc_cfg, NULL, NULL,
 			5, 0,
 			K_NO_WAIT
 		);
 
 		// Command
-		ad5940_application_command_cfg.param.agpio_cfg = AD5940_EXTERNAL_agpio_cfg;
+		ad5940_task_command_cfg.param.agpio_cfg = AD5940_EXTERNAL_agpio_cfg;
 
-		ad5940_application_command_cfg.param.lprtia_calibration_result = ad5940_electrochemical_calibration_results.lprtia_calibration_result;
-		ad5940_application_command_cfg.param.hsrtia_calibration_result = ad5940_electrochemical_calibration_results.hsrtia_calibration_result;
+		ad5940_task_command_cfg.param.lprtia_calibration_result = ad5940_electrochemical_calibration_results.lprtia_calibration_result;
+		ad5940_task_command_cfg.param.hsrtia_calibration_result = ad5940_electrochemical_calibration_results.hsrtia_calibration_result;
 
-		ad5940_application_command_cfg.param.clockConfig = ad5940_clock_init_ctx.clockConfig;
-		ad5940_application_command_cfg.param.lfoscFrequency = ad5940_clock_init_ctx.lfoscFrequency;
+		ad5940_task_command_cfg.param.clockConfig = ad5940_clock_init_ctx.clockConfig;
+		ad5940_task_command_cfg.param.lfoscFrequency = ad5940_clock_init_ctx.lfoscFrequency;
 
-		ad5940_application_command_cfg.param.ADCRate = ad5940_clock_init_ctx.clockConfig.ADCRate;
+		ad5940_task_command_cfg.param.ADCRate = ad5940_clock_init_ctx.clockConfig.ADCRate;
 
-		ad5940_application_command_tid = k_thread_create(
-			&ad5940_application_command_thread,
-			ad5940_application_command_stack,
-			K_THREAD_STACK_SIZEOF(ad5940_application_command_stack),
-			ad5940_application_command_run,
-			&ad5940_application_command_cfg, NULL, NULL,
+		ad5940_task_command_tid = k_thread_create(
+			&ad5940_task_command_thread,
+			ad5940_task_command_stack,
+			K_THREAD_STACK_SIZEOF(ad5940_task_command_stack),
+			AD5940_TASK_COMMAND_run,
+			&ad5940_task_command_cfg, NULL, NULL,
 			5, 0,
 			K_NO_WAIT
 		);
@@ -321,13 +321,13 @@ int main(void)
 		// ==================================================
 		// Command Receiver
 
-		command_receiver_init_impl_zephyr();
+		COMMAND_RECEIVER_init_impl_zephyr();
 
 		command_receiver_tid = k_thread_create(
 			&command_receiver_thread,
 			command_receiver_stack,
 			K_THREAD_STACK_SIZEOF(command_receiver_stack),
-			command_receiver_run,
+			COMMAND_RECEIVER_run,
 			&command_receiver_cfg, NULL, NULL,
 			5, 0,
 			K_NO_WAIT

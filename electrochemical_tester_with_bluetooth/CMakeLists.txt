@@ -28,9 +28,6 @@ target_sources(app PRIVATE
   ./src/main.c
   ./src/application/ad5940_clock_init.c
   ./src/application/ad5940_electrochemical_calibration.c
-  # ./src/port/application/ad5940_application_thread_impl_zephyr_adc.c
-  # ./src/port/application/ad5940_application_thread_impl_zephyr_command.c
-  # ./src/port/application/ad5940_application_thread_impl_zephyr_common.c
   ./src/port/application/ad5940_intc0_lock_impl_zephyr.c
   ./src/port/sdk/ad5940/ad5940_port_delay_impl_zephyr.c
   ./src/port/sdk/ad5940/ad5940_port_gpio_impl_zephyr.c
@@ -39,12 +36,12 @@ target_sources(app PRIVATE
   ./src/port/sdk/ad5940/ad5940_port_reset_impl_zephyr.c
   ./src/port/sdk/ad5940/ad5940_port_spi_impl_zephyr.c
   ./src/port/sdk/ad5940/ad5940_port_useless.c
-  ./src/port/task/ad5940_application/ad5940_application_impl_zephyr.c
+  ./src/port/task/ad5940_task/ad5940_task_impl_zephyr.c
   ./src/port/task/command_receiver/command_receiver_impl_zephyr.c
   ./src/resource/ad5940_hardware.c
   ./src/wdt/watchdog0_wdt.c
-  ./src/task/ad5940_application/ad5940_application_adc.c
-  ./src/task/ad5940_application/ad5940_application_command.c
+  ./src/task/ad5940_task/ad5940_task_adc.c
+  ./src/task/ad5940_task/ad5940_task_command.c
   ./src/task/command_receiver/command_receiver.c
 )
 
@@ -64,10 +61,10 @@ target_include_directories(app PRIVATE
   ./src/task
   ./src/driver/ad5940
   ./src/port/application
-  ./src/task/ad5940_application
+  ./src/task/ad5940_task
   ./src/task/command_receiver
   ./src/port/sdk/ad5940
-  ./src/port/task/ad5940_application
+  ./src/port/task/ad5940_task
   ./src/port/task/command_receiver
 )
 # NORDIC SDK APP END

@@ -1,30 +1,30 @@
-#include "ad5940_application_command.h"
+#include "ad5940_task_command.h"
 
-#include "ad5940_application_private.h"
+#include "ad5940_task_private.h"
 
 #include "ad5940_electrochemical_ca.h"
 #include "ad5940_electrochemical_cv.h"
 #include "ad5940_electrochemical_dpv.h"
 
-static const AD5940_APPLICATION_COMMAND_CFG *_cfg;
-static AD5940_APPLICATION_COMMAND_STATE _state = AD5940_APPLICATION_COMMAND_STATE_UNINITIALIZED;
+static const AD5940_TASK_COMMAND_CFG *_cfg;
+static AD5940_TASK_COMMAND_STATE _state = AD5940_TASK_COMMAND_STATE_UNINITIALIZED;
 
-static AD5940_APPLICATION_ELECTROCHEMICAL_TYPE _type;
-static const ELECTROCHEMICAL_PARAMETERS_UNION *_parameters;
+static AD5940_TASK_ELECTROCHEMICAL_TYPE _type;
+static const AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION *_parameters;
 static const AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING *_routing;
 
-AD5940_APPLICATION_COMMAND_STATE ad5940_application_command_get_state(void)
+AD5940_TASK_COMMAND_STATE AD5940_TASK_COMMAND_get_state(void)
 {
-    AD5940_APPLICATION_COMMAND_STATE copy;
+    AD5940_TASK_COMMAND_STATE copy;
     _cfg->port.get_access_state_lock();
     copy = _state;
     _cfg->port.release_access_state_lock();
     return copy;
 }
 
-int ad5940_application_command_measure(
-    const AD5940_APPLICATION_ELECTROCHEMICAL_TYPE type,
-    const ELECTROCHEMICAL_PARAMETERS_UNION *const parameters,
+int AD5940_TASK_COMMAND_measure(
+    const AD5940_TASK_ELECTROCHEMICAL_TYPE type,
+    const AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION *const parameters,
     const AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING *const routing
 )
 {
@@ -48,7 +48,7 @@ static AD5940_ELECTROCHEMICAL_LPDAC_TO_LPTIA_CONFIG lpdac_to_lptia_config;
 static AD5940_ELECTROCHEMICAL_LPDAC_TO_HSTIA_CONFIG lpdac_to_hstia_config;
 static AD5940_ELECTROCHEMICAL_HSDAC_MMR_TO_HSTIA_CONFIG hsdac_mmr_to_hstia_config;
 
-AD5940Err ad5940_application_command_run(AD5940_APPLICATION_COMMAND_CFG *const cfg)
+AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
 {
     int err = 0;
     _cfg = cfg;
@@ -131,19 +131,19 @@ AD5940Err ad5940_application_command_run(AD5940_APPLICATION_COMMAND_CFG *const c
     };
 
     _cfg->port.get_access_state_lock();
-    _state = AD5940_APPLICATION_COMMAND_STATE_IDLE;
+    _state = AD5940_TASK_COMMAND_STATE_IDLE;
     _cfg->port.release_access_state_lock();
 
 	for (;;) {
         err = _cfg->port.wait_measurement();
 		if (err) {
             _cfg->port.get_access_state_lock();
-            _state = AD5940_APPLICATION_COMMAND_STATE_ERROR;
+            _state = AD5940_TASK_COMMAND_STATE_ERROR;
             _cfg->port.release_access_state_lock();
             return err;
         }
         _cfg->port.get_access_state_lock();
-        _state = AD5940_APPLICATION_COMMAND_STATE_EXECUTING;
+        _state = AD5940_TASK_COMMAND_STATE_EXECUTING;
         _cfg->port.release_access_state_lock();
 
         _cfg->port.get_access_measurement_param_lock();
@@ -152,7 +152,7 @@ AD5940Err ad5940_application_command_run(AD5940_APPLICATION_COMMAND_CFG *const c
         uint16_t adc_length;
         switch (_type)
         {
-        case AD5940_APPLICATION_ELECTROCHEMICAL_TYPE_CA: 
+        case AD5940_TASK_ELECTROCHEMICAL_TYPE_CA: 
         {
             AD5940_ELECTROCHEMICAL_CA_CONFIG _config = {
                 .parameters = &_parameters->ca.ad5940_parameters,
@@ -172,10 +172,10 @@ AD5940Err ad5940_application_command_run(AD5940_APPLICATION_COMMAND_CFG *const c
                 _parameters->ca.ad5940_parameters.t_interval, 
                 _parameters->ca.t_run
             );
-            ad5940_application_adc_reset_length(adc_length);
+            AD5940_TASK_ADC_reset_length(adc_length);
             break;
         }
-        case AD5940_APPLICATION_ELECTROCHEMICAL_TYPE_CV: 
+        case AD5940_TASK_ELECTROCHEMICAL_TYPE_CV: 
         {
             AD5940_ELECTROCHEMICAL_CV_CONFIG _config = {
                 .parameters = &_parameters->cv.ad5940_parameters,
@@ -196,10 +196,10 @@ AD5940Err ad5940_application_command_run(AD5940_APPLICATION_COMMAND_CFG *const c
             );
             if(err != AD5940ERR_OK) break;
             adc_length *= _parameters->cv.number_of_scans;
-            ad5940_application_adc_reset_length(adc_length);
+            AD5940_TASK_ADC_reset_length(adc_length);
             break;
         }
-        case AD5940_APPLICATION_ELECTROCHEMICAL_TYPE_DPV: 
+        case AD5940_TASK_ELECTROCHEMICAL_TYPE_DPV: 
         {
             AD5940_ELECTROCHEMICAL_DPV_CONFIG _config = {
                 .parameters = &_parameters->dpv.ad5940_parameters,
@@ -219,7 +219,7 @@ AD5940Err ad5940_application_command_run(AD5940_APPLICATION_COMMAND_CFG *const c
                 &adc_length
             );
             if(err != AD5940ERR_OK) break;
-            ad5940_application_adc_reset_length(adc_length);
+            AD5940_TASK_ADC_reset_length(adc_length);
             break;
         }
         default:
@@ -229,7 +229,7 @@ AD5940Err ad5940_application_command_run(AD5940_APPLICATION_COMMAND_CFG *const c
         _cfg->port.release_access_measurement_param_lock();
 
         _cfg->port.get_access_state_lock();
-        _state = AD5940_APPLICATION_COMMAND_STATE_IDLE;
+        _state = AD5940_TASK_COMMAND_STATE_IDLE;
         _cfg->port.release_access_state_lock();
 	}
 

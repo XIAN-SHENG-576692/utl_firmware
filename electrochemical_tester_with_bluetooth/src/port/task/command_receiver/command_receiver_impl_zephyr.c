@@ -4,7 +4,7 @@
 
 static K_MUTEX_DEFINE(_mutex_state);
 
-int command_receiver_init_impl_zephyr(void)
+int COMMAND_RECEIVER_init_impl_zephyr(void)
 {
     int err = 0;
 
@@ -14,13 +14,13 @@ int command_receiver_init_impl_zephyr(void)
     return 0;
 }
 
-int command_receiver_get_access_state_lock(void)
+int COMMAND_RECEIVER_get_access_state_lock(void)
 {
     k_mutex_lock(&_mutex_state, K_FOREVER);
     return 0;
 }
 
-int command_receiver_release_access_state_lock(void)
+int COMMAND_RECEIVER_release_access_state_lock(void)
 {
     k_mutex_unlock(&_mutex_state);
     return 0;

@@ -1,6 +1,6 @@
 #include "command_receiver.h"
 
-#include "ad5940_application_command.h"
+#include "ad5940_task_command.h"
 
 static const COMMAND_RECEIVER_CFG *_cfg;
 static COMMAND_RECEIVER_STATE _state = COMMAND_RECEIVER_STATE_UNINITIALIZED;
@@ -8,7 +8,7 @@ static COMMAND_RECEIVER_STATE _state = COMMAND_RECEIVER_STATE_UNINITIALIZED;
 #define BUFF_LENGTH 70
 static uint8_t response[BUFF_LENGTH];
 
-COMMAND_RECEIVER_STATE command_receiver_get_state(void)
+COMMAND_RECEIVER_STATE COMMAND_RECEIVER_get_state(void)
 {
     COMMAND_RECEIVER_STATE copy;
     _cfg->port.get_access_state_lock();
@@ -17,15 +17,15 @@ COMMAND_RECEIVER_STATE command_receiver_get_state(void)
     return copy;
 }
 
-int command_receiver_run(const COMMAND_RECEIVER_CFG *const cfg)
+int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
 {
     int err = 0;
     _cfg = cfg;
 
     uint8_t *command;
     uint16_t command_length;
-    AD5940_APPLICATION_ELECTROCHEMICAL_TYPE electrochemical_type;
-    ELECTROCHEMICAL_PARAMETERS_UNION parameters;
+    AD5940_TASK_ELECTROCHEMICAL_TYPE electrochemical_type;
+    AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION parameters;
     AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING electrode_routing;
 
     _cfg->port.get_access_state_lock();
@@ -59,8 +59,8 @@ int command_receiver_run(const COMMAND_RECEIVER_CFG *const cfg)
         case 0x00:
         {
             {
-                AD5940_APPLICATION_COMMAND_STATE state = ad5940_application_command_get_state();
-                if(state != AD5940_APPLICATION_COMMAND_STATE_IDLE) continue;
+                AD5940_TASK_COMMAND_STATE state = AD5940_TASK_COMMAND_get_state();
+                if(state != AD5940_TASK_COMMAND_STATE_IDLE) continue;
             }
 
             // Entity id
@@ -77,7 +77,7 @@ int command_receiver_run(const COMMAND_RECEIVER_CFG *const cfg)
             memcpy(
                 &parameters,
                 (command + (1 + 1 + sizeof(entity_id) + sizeof(electrochemical_type))),
-                sizeof(ELECTROCHEMICAL_PARAMETERS_UNION)
+                sizeof(AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION)
             );
 
             memcpy(
@@ -105,15 +105,15 @@ int command_receiver_run(const COMMAND_RECEIVER_CFG *const cfg)
                 memcpy(p1, &electrode_routing, sizeof(electrode_routing));
                 p1 += sizeof(electrode_routing);
 
-                memcpy(p1, &_cfg->param.ad5940_application_command_param->hsrtia_calibration_result, sizeof(_cfg->param.ad5940_application_command_param->hsrtia_calibration_result));
-                p1 += sizeof(_cfg->param.ad5940_application_command_param->hsrtia_calibration_result);
+                memcpy(p1, &_cfg->param.ad5940_task_command_param->hsrtia_calibration_result, sizeof(_cfg->param.ad5940_task_command_param->hsrtia_calibration_result));
+                p1 += sizeof(_cfg->param.ad5940_task_command_param->hsrtia_calibration_result);
 
                 float adcPga;
-                AD5940_map_ADCPGA(_cfg->param.ad5940_application_command_param->ADCPga, &adcPga);
+                AD5940_map_ADCPGA(_cfg->param.ad5940_task_command_param->ADCPga, &adcPga);
                 memcpy(p1, &adcPga, sizeof(adcPga));
                 p1 += sizeof(adcPga);
 
-                float adcRefVolt = _cfg->param.ad5940_application_command_param->ADCRefVolt;
+                float adcRefVolt = _cfg->param.ad5940_task_command_param->ADCRefVolt;
                 memcpy(p1, &adcRefVolt, sizeof(adcRefVolt));
                 p1 += sizeof(adcRefVolt);
 
@@ -124,7 +124,7 @@ int command_receiver_run(const COMMAND_RECEIVER_CFG *const cfg)
                 _cfg->port.send_response(p0, p_len);
             }
             {
-                ad5940_application_command_measure(
+                AD5940_TASK_COMMAND_measure(
                     electrochemical_type,
                     &parameters,
                     &electrode_routing

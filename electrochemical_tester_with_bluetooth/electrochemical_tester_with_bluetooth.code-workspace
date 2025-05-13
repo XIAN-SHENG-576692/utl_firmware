@@ -86,7 +86,8 @@
 			"ad5940_application_adc_impl_zephyr.h": "c",
 			"ad5940_application_impl_zephyr.h": "c",
 			"command_receiver.h": "c",
-			"command_receiver_impl_zephyr.h": "c"
+			"command_receiver_impl_zephyr.h": "c",
+			"ad5940_task_impl_zephyr.h": "c"
 		}
 	}
 }

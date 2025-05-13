@@ -8,19 +8,19 @@ extern "C"
 #include "stdint.h"
 #include "ad5940_task_command.h"
 
-typedef struct
-{
-    int (*wait_command_received)(
-        uint8_t **const command,
-        uint16_t *const command_length
-    );
-    int (*send_response)(
-        uint8_t *const command,
-        const uint16_t command_length
-    );
-    int (*get_access_state_lock)(void);
-    int (*release_access_state_lock)(void);
-} COMMAND_RECEIVER_PORT;
+// ==================================================
+// PORT
+int COMMAND_RECEIVER_wait_command_received(
+    uint8_t **const command,
+    uint16_t *const command_length
+);
+int COMMAND_RECEIVER_send_response(
+    uint8_t *const command,
+    const uint16_t command_length
+);
+int COMMAND_RECEIVER_get_access_state_lock(void);
+int COMMAND_RECEIVER_release_access_state_lock(void);
+// ==================================================
 
 typedef struct
 {
@@ -29,7 +29,6 @@ typedef struct
 
 typedef struct
 {
-    COMMAND_RECEIVER_PORT port;
     COMMAND_RECEIVER_PARAM param;
 } COMMAND_RECEIVER_CFG;
 

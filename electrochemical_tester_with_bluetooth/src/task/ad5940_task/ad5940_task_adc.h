@@ -15,23 +15,22 @@ typedef struct
     uint16_t adc_buffer_length;
 } AD5940_TASK_ADC_RESULT;
 
+// ==================================================
+// PORT
+int AD5940_TASK_ADC_get_access_state_lock(void);
+int AD5940_TASK_ADC_release_access_state_lock(void);
+
+int AD5940_TASK_ADC_get_access_length_lock(void);
+int AD5940_TASK_ADC_release_access_length_lock(void);
+
+int AD5940_TASK_ADC_put_quene(AD5940_TASK_ADC_RESULT adc_result);
+int AD5940_TASK_ADC_take_quene(AD5940_TASK_ADC_RESULT *const adc_result);
+
+int AD5940_TASK_ADC_wait_ad5940_intc_triggered(void);
+// ==================================================
+
 typedef struct
 {
-    int (*get_access_state_lock)(void);
-    int (*release_access_state_lock)(void);
-
-    int (*get_access_length_lock)(void);
-    int (*release_access_length_lock)(void);
-
-    int (*put_quene)(AD5940_TASK_ADC_RESULT adc_result);
-    int (*take_quene)(AD5940_TASK_ADC_RESULT *const adc_result);
-
-    int (*wait_ad5940_intc_triggered)(void);
-} AD5940_TASK_ADC_PORT;
-
-typedef struct
-{
-    AD5940_TASK_ADC_PORT port;
 } AD5940_TASK_ADC_CFG;
 
 AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg);

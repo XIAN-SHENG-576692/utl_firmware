@@ -11,9 +11,9 @@ static uint8_t response[BUFF_LENGTH];
 COMMAND_RECEIVER_STATE COMMAND_RECEIVER_get_state(void)
 {
     COMMAND_RECEIVER_STATE copy;
-    _cfg->port.get_access_state_lock();
+    COMMAND_RECEIVER_get_access_state_lock();
     copy = _state;
-    _cfg->port.release_access_state_lock();
+    COMMAND_RECEIVER_release_access_state_lock();
     return copy;
 }
 
@@ -28,25 +28,25 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
     AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION parameters;
     AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING electrode_routing;
 
-    _cfg->port.get_access_state_lock();
+    COMMAND_RECEIVER_get_access_state_lock();
     _state = COMMAND_RECEIVER_STATE_IDLE;
-    _cfg->port.release_access_state_lock();
+    COMMAND_RECEIVER_release_access_state_lock();
 
 	for (;;) {
-        err = _cfg->port.wait_command_received(
+        err = COMMAND_RECEIVER_wait_command_received(
             &command,
             &command_length
         );
 
 		if (err) {
-            _cfg->port.get_access_state_lock();
+            COMMAND_RECEIVER_get_access_state_lock();
             _state = COMMAND_RECEIVER_STATE_ERROR;
-            _cfg->port.release_access_state_lock();
+            COMMAND_RECEIVER_release_access_state_lock();
             return err;
         }
-        _cfg->port.get_access_state_lock();
+        COMMAND_RECEIVER_get_access_state_lock();
         _state = COMMAND_RECEIVER_STATE_EXECUTING;
-        _cfg->port.release_access_state_lock();
+        COMMAND_RECEIVER_release_access_state_lock();
 
         // Check
 		if(command[0] != 0x01) 
@@ -121,7 +121,7 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
                 uint16_t p_len = p1 - p0;
 
                 // Send packet
-                _cfg->port.send_response(p0, p_len);
+                COMMAND_RECEIVER_send_response(p0, p_len);
             }
             {
                 AD5940_TASK_COMMAND_measure(
@@ -140,9 +140,9 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
         default:
             break;
         }
-        _cfg->port.get_access_state_lock();
+        COMMAND_RECEIVER_get_access_state_lock();
         _state = COMMAND_RECEIVER_STATE_IDLE;
-        _cfg->port.release_access_state_lock();
+        COMMAND_RECEIVER_release_access_state_lock();
 	}
 
     return 0;

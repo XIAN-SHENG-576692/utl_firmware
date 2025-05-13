@@ -99,16 +99,12 @@ static k_tid_t ad5940_task_adc_tid;
 static struct k_thread ad5940_task_adc_thread;
 K_THREAD_STACK_DEFINE(ad5940_task_adc_stack, 4096);
 
+int AD5940_TASK_ADC_wait_ad5940_intc_triggered(void)
+{
+	return ad5940_intc0_lock_wait();
+}
+
 AD5940_TASK_ADC_CFG ad5940_task_adc_cfg = {
-	.port = {
-		.wait_ad5940_intc_triggered = ad5940_intc0_lock_wait,
-		.get_access_state_lock = AD5940_TASK_ADC_get_access_state_lock,
-		.release_access_state_lock = AD5940_TASK_ADC_release_access_state_lock,
-		.get_access_length_lock = AD5940_TASK_ADC_get_access_length_lock,
-		.release_access_length_lock = AD5940_TASK_ADC_release_access_length_lock,
-		.put_quene = AD5940_TASK_ADC_put_quene,
-		.take_quene = AD5940_TASK_ADC_take_quene,
-	},
 };
 
 // Command
@@ -119,14 +115,6 @@ static struct k_thread ad5940_task_command_thread;
 K_THREAD_STACK_DEFINE(ad5940_task_command_stack, 16384);
 
 AD5940_TASK_COMMAND_CFG ad5940_task_command_cfg = {
-	.port = {
-		.get_access_state_lock = AD5940_TASK_COMMAND_get_access_state_lock,
-		.release_access_state_lock = AD5940_TASK_COMMAND_release_access_state_lock,
-		.get_access_measurement_param_lock = AD5940_TASK_COMMAND_get_access_measurement_param_lock,
-		.release_access_measurement_param_lock = AD5940_TASK_COMMAND_release_access_measurement_param_lock,
-		.trigger_measurement = AD5940_TASK_COMMAND_trigger_measurement,
-		.wait_measurement = AD5940_TASK_COMMAND_wait_measurement,
-	},
 	.param = {
 		.HstiaRtiaSel = MAIN_AD5940_HSTIARTIA,
 		
@@ -166,7 +154,7 @@ static k_tid_t command_receiver_tid;
 static struct k_thread command_receiver_thread;
 K_THREAD_STACK_DEFINE(command_receiver_stack, 4096);
 
-int wait_command_received(
+int COMMAND_RECEIVER_wait_command_received(
 	uint8_t **const command,
 	uint16_t *const command_length
 ) 
@@ -189,13 +177,15 @@ int wait_command_received(
 	return err;
 }
 
+int COMMAND_RECEIVER_send_response(
+    uint8_t *const command,
+    const uint16_t command_length
+)
+{
+	return BLE_SIMPLE_send_packet(command, command_length);
+}
+
 COMMAND_RECEIVER_CFG command_receiver_cfg = {
-	.port = {
-		.get_access_state_lock = COMMAND_RECEIVER_get_access_state_lock,
-		.release_access_state_lock = COMMAND_RECEIVER_release_access_state_lock,
-		.send_response = BLE_SIMPLE_send_packet,
-		.wait_command_received = wait_command_received,
-	},
 	.param = {
 		.ad5940_task_command_param = &ad5940_task_command_cfg.param,
 	},

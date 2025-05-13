@@ -16,9 +16,9 @@ static const AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING *_routing;
 AD5940_TASK_COMMAND_STATE AD5940_TASK_COMMAND_get_state(void)
 {
     AD5940_TASK_COMMAND_STATE copy;
-    _cfg->port.get_access_state_lock();
+    AD5940_TASK_COMMAND_get_access_state_lock();
     copy = _state;
-    _cfg->port.release_access_state_lock();
+    AD5940_TASK_COMMAND_release_access_state_lock();
     return copy;
 }
 
@@ -28,12 +28,12 @@ int AD5940_TASK_COMMAND_measure(
     const AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING *const routing
 )
 {
-    _cfg->port.get_access_measurement_param_lock();
+    AD5940_TASK_COMMAND_get_access_measurement_param_lock();
     _type = type;
     _parameters = parameters;
     _routing = routing;
-    _cfg->port.release_access_measurement_param_lock();
-    _cfg->port.trigger_measurement();
+    AD5940_TASK_COMMAND_release_access_measurement_param_lock();
+    AD5940_TASK_COMMAND_trigger_measurement();
     return 0;
 }
 
@@ -130,23 +130,23 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         
     };
 
-    _cfg->port.get_access_state_lock();
+    AD5940_TASK_COMMAND_get_access_state_lock();
     _state = AD5940_TASK_COMMAND_STATE_IDLE;
-    _cfg->port.release_access_state_lock();
+    AD5940_TASK_COMMAND_release_access_state_lock();
 
 	for (;;) {
-        err = _cfg->port.wait_measurement();
+        err = AD5940_TASK_COMMAND_wait_measurement();
 		if (err) {
-            _cfg->port.get_access_state_lock();
+            AD5940_TASK_COMMAND_get_access_state_lock();
             _state = AD5940_TASK_COMMAND_STATE_ERROR;
-            _cfg->port.release_access_state_lock();
+            AD5940_TASK_COMMAND_release_access_state_lock();
             return err;
         }
-        _cfg->port.get_access_state_lock();
+        AD5940_TASK_COMMAND_get_access_state_lock();
         _state = AD5940_TASK_COMMAND_STATE_EXECUTING;
-        _cfg->port.release_access_state_lock();
+        AD5940_TASK_COMMAND_release_access_state_lock();
 
-        _cfg->port.get_access_measurement_param_lock();
+        AD5940_TASK_COMMAND_get_access_measurement_param_lock();
 
         // Measure the electrochemical.
         uint16_t adc_length;
@@ -226,11 +226,11 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
             break;
         }
         
-        _cfg->port.release_access_measurement_param_lock();
+        AD5940_TASK_COMMAND_release_access_measurement_param_lock();
 
-        _cfg->port.get_access_state_lock();
+        AD5940_TASK_COMMAND_get_access_state_lock();
         _state = AD5940_TASK_COMMAND_STATE_IDLE;
-        _cfg->port.release_access_state_lock();
+        AD5940_TASK_COMMAND_release_access_state_lock();
 	}
 
     return err;

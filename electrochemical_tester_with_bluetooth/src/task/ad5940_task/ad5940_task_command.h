@@ -9,6 +9,17 @@ extern "C"
 #include "ad5940_electrochemical_utils.h"
 
 // ==================================================
+// PORT
+int AD5940_TASK_COMMAND_get_access_state_lock(void);
+int AD5940_TASK_COMMAND_release_access_state_lock(void);
+
+int AD5940_TASK_COMMAND_get_access_measurement_param_lock(void);
+int AD5940_TASK_COMMAND_release_access_measurement_param_lock(void);
+
+int AD5940_TASK_COMMAND_wait_measurement(void);
+int AD5940_TASK_COMMAND_trigger_measurement(void);
+
+// ==================================================
 // Type
 
 typedef enum {
@@ -56,18 +67,6 @@ typedef union {
 
 typedef struct
 {
-    int (*get_access_state_lock)(void);
-    int (*release_access_state_lock)(void);
-
-    int (*get_access_measurement_param_lock)(void);
-    int (*release_access_measurement_param_lock)(void);
-
-    int (*wait_measurement)(void);
-    int (*trigger_measurement)(void);
-} AD5940_TASK_COMMAND_PORT;
-
-typedef struct
-{
     AGPIOCfg_Type agpio_cfg;
 
     fImpPol_Type lprtia_calibration_result;
@@ -112,7 +111,6 @@ typedef struct
 
 typedef struct
 {
-    AD5940_TASK_COMMAND_PORT port;
     AD5940_TASK_COMMAND_PARAM param;
 } AD5940_TASK_COMMAND_CFG;
 

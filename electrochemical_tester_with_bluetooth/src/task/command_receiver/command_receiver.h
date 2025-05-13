@@ -24,11 +24,18 @@ int COMMAND_RECEIVER_release_access_state_lock(void);
 
 typedef struct
 {
+    int (*start)(void);
+    int (*end)(void);
+} COMMAND_RECEIVER_CALLBACK;
+
+typedef struct
+{
     AD5940_TASK_COMMAND_PARAM *ad5940_task_command_param;
 } COMMAND_RECEIVER_PARAM;
 
 typedef struct
 {
+    COMMAND_RECEIVER_CALLBACK callback;
     COMMAND_RECEIVER_PARAM param;
 } COMMAND_RECEIVER_CFG;
 

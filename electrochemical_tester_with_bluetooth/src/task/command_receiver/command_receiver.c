@@ -48,6 +48,12 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
         _state = COMMAND_RECEIVER_STATE_EXECUTING;
         COMMAND_RECEIVER_release_access_state_lock();
 
+        // callback
+        if(_cfg->callback.start != NULL)
+        {
+            _cfg->callback.start();
+        }
+
         // Check
 		if(command[0] != 0x01) 
 		{
@@ -143,6 +149,12 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
         COMMAND_RECEIVER_get_access_state_lock();
         _state = COMMAND_RECEIVER_STATE_IDLE;
         COMMAND_RECEIVER_release_access_state_lock();
+
+        // callback
+        if(_cfg->callback.end != NULL)
+        {
+            _cfg->callback.end();
+        }
 	}
 
     return 0;

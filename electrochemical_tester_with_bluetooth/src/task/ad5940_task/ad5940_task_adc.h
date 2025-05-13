@@ -31,6 +31,13 @@ int AD5940_TASK_ADC_wait_ad5940_intc_triggered(void);
 
 typedef struct
 {
+    int (*start)(void);
+    int (*end)(void);
+} AD5940_TASK_ADC_CALLBACK;
+
+typedef struct
+{
+    AD5940_TASK_ADC_CALLBACK callback;
 } AD5940_TASK_ADC_CFG;
 
 AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg);

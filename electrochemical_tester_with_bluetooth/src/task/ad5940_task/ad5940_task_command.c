@@ -145,6 +145,12 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         AD5940_TASK_COMMAND_get_access_state_lock();
         _state = AD5940_TASK_COMMAND_STATE_EXECUTING;
         AD5940_TASK_COMMAND_release_access_state_lock();
+        
+        // callback
+        if(_cfg->callback.start != NULL)
+        {
+            _cfg->callback.start();
+        }
 
         AD5940_TASK_COMMAND_get_access_measurement_param_lock();
 
@@ -231,6 +237,12 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         AD5940_TASK_COMMAND_get_access_state_lock();
         _state = AD5940_TASK_COMMAND_STATE_IDLE;
         AD5940_TASK_COMMAND_release_access_state_lock();
+
+        // callback
+        if(_cfg->callback.end != NULL)
+        {
+            _cfg->callback.end();
+        }
 	}
 
     return err;

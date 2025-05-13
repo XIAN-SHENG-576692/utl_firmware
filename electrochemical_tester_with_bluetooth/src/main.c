@@ -338,8 +338,23 @@ int main(void)
 	}
 
 	watchdog0_feed();
+	uint8_t wdt_flag = 0;
+	#define WDT_AD5940_TASK_ADC_FLAG (1U << 0)
+	#define WDT_AD5940_TASK_COMMAND_FLAG (1U << 1)
+	#define WDT_COMMAND_RECEIVER_FLAG (1U << 2)
 	for(;;)
 	{
+		// ==================================================
+		// Command Receiver
+		if(COMMAND_RECEIVER_get_state() == COMMAND_RECEIVER_STATE_IDLE)
+		{
+			wdt_flag &= ~WDT_COMMAND_RECEIVER_FLAG;
+		}
+		else
+		{
+			if(wdt_flag & WDT_COMMAND_RECEIVER_FLAG) return 1;
+			wdt_flag |= WDT_COMMAND_RECEIVER_FLAG;
+		}
     	k_sleep(K_MSEC(4.5e3));
 		watchdog0_feed();
 	}

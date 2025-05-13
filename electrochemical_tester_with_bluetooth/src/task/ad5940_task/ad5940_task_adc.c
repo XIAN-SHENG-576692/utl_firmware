@@ -56,6 +56,12 @@ AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg)
         _state = AD5940_TASK_COMMAND_STATE_EXECUTING;
         AD5940_TASK_ADC_release_access_state_lock();
 
+        // callback
+        if(_cfg->callback.start != NULL)
+        {
+            _cfg->callback.start();
+        }
+
         AD5940_TASK_ADC_get_access_length_lock();
         AD5940_TASK_ADC_RESULT result = {
             .adc_buffer_index = _adc_buffer_index,
@@ -80,6 +86,12 @@ AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg)
         AD5940_TASK_ADC_get_access_state_lock();
         _state = AD5940_TASK_COMMAND_STATE_IDLE;
         AD5940_TASK_ADC_release_access_state_lock();
+
+        // callback
+        if(_cfg->callback.end != NULL)
+        {
+            _cfg->callback.end();
+        }
 	}
 
     return err;

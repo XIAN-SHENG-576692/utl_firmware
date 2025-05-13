@@ -111,6 +111,13 @@ typedef struct
 
 typedef struct
 {
+    int (*start)(void);
+    int (*end)(void);
+} AD5940_TASK_COMMAND_CALLBACK;
+
+typedef struct
+{
+    AD5940_TASK_COMMAND_CALLBACK callback;
     AD5940_TASK_COMMAND_PARAM param;
 } AD5940_TASK_COMMAND_CFG;
 

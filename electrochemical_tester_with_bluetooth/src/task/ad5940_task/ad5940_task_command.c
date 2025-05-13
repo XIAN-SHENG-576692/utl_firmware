@@ -12,8 +12,8 @@ static const AD5940_TASK_COMMAND_CFG *_cfg;
 static volatile _Atomic AD5940_TASK_COMMAND_STATE _state = AD5940_TASK_COMMAND_STATE_UNINITIALIZED;
 
 static AD5940_TASK_ELECTROCHEMICAL_TYPE _type;
-static const AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION *_parameters;
-static const AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING *_routing;
+static AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION _parameters;
+static AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING _routing;
 
 AD5940_TASK_COMMAND_STATE AD5940_TASK_COMMAND_get_state(void)
 {
@@ -28,8 +28,8 @@ int AD5940_TASK_COMMAND_measure(
 {
     AD5940_TASK_COMMAND_get_access_measurement_param_lock();
     _type = type;
-    _parameters = parameters;
-    _routing = routing;
+    _parameters = *parameters;
+    _routing = *routing;
     AD5940_TASK_COMMAND_release_access_measurement_param_lock();
     AD5940_TASK_COMMAND_trigger_measurement();
     return 0;
@@ -122,6 +122,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         .dsp_cfg = &_utility_DSPCfg_Type,
         .lpdac_cfg = &_utility_LPPACfg_Type,
         .hstia_cfg = &_utility_HSTIACfg_Type,
+        .electrode_routing = &_routing,
     };
 
     hsdac_mmr_to_hstia_config = (AD5940_ELECTROCHEMICAL_HSDAC_MMR_TO_HSTIA_CONFIG) {
@@ -141,11 +142,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         // callback
         if(_cfg->callback.start != NULL)
         {
-            err = _cfg->callback.start();
-        }
-        if (err) {
-            atomic_store(&_state, AD5940_TASK_COMMAND_STATE_ERROR);
-            return err;
+            _cfg->callback.start();
         }
 
         AD5940_TASK_COMMAND_get_access_measurement_param_lock();
@@ -157,7 +154,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         case AD5940_TASK_ELECTROCHEMICAL_TYPE_CA: 
         {
             AD5940_ELECTROCHEMICAL_CA_CONFIG _config = {
-                .parameters = &_parameters->ca.ad5940_parameters,
+                .parameters = &_parameters.ca.ad5940_parameters,
                 .run = &run_config,
                 .path_type = 1,
                 .path.lpdac_to_hstia = &lpdac_to_hstia_config,
@@ -171,8 +168,8 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
             // ADC length
             #define CA_FIFO_THRESH(t_interval, t_run) (round(t_run / t_interval) + 1)
             adc_length = CA_FIFO_THRESH(
-                _parameters->ca.ad5940_parameters.t_interval, 
-                _parameters->ca.t_run
+                _parameters.ca.ad5940_parameters.t_interval, 
+                _parameters.ca.t_run
             );
             AD5940_TASK_ADC_reset_length(adc_length);
             break;
@@ -180,7 +177,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         case AD5940_TASK_ELECTROCHEMICAL_TYPE_CV: 
         {
             AD5940_ELECTROCHEMICAL_CV_CONFIG _config = {
-                .parameters = &_parameters->cv.ad5940_parameters,
+                .parameters = &_parameters.cv.ad5940_parameters,
                 .run = &run_config,
                 .path_type = 1,
                 .path.lpdac_to_hstia = &lpdac_to_hstia_config,
@@ -193,18 +190,18 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
 
             // ADC length
             err = AD5940_ELECTROCHEMICAL_CV_get_fifo_count(
-                &_parameters->cv.ad5940_parameters,
+                &_parameters.cv.ad5940_parameters,
                 &adc_length
             );
             if(err != AD5940ERR_OK) break;
-            adc_length *= _parameters->cv.number_of_scans;
+            adc_length *= _parameters.cv.number_of_scans;
             AD5940_TASK_ADC_reset_length(adc_length);
             break;
         }
         case AD5940_TASK_ELECTROCHEMICAL_TYPE_DPV: 
         {
             AD5940_ELECTROCHEMICAL_DPV_CONFIG _config = {
-                .parameters = &_parameters->dpv.ad5940_parameters,
+                .parameters = &_parameters.dpv.ad5940_parameters,
                 .run = &run_config,
                 .path_type = 1,
                 .path.lpdac_to_hstia = &lpdac_to_hstia_config,
@@ -217,7 +214,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
 
             // ADC length
             err = AD5940_ELECTROCHEMICAL_DPV_get_fifo_count(
-                &_parameters->dpv.ad5940_parameters,
+                &_parameters.dpv.ad5940_parameters,
                 &adc_length
             );
             if(err != AD5940ERR_OK) break;
@@ -235,11 +232,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         // callback
         if(_cfg->callback.end != NULL)
         {
-            err = _cfg->callback.end();
-        }
-        if (err) {
-            atomic_store(&_state, AD5940_TASK_COMMAND_STATE_ERROR);
-            return err;
+            _cfg->callback.end();
         }
 	}
 

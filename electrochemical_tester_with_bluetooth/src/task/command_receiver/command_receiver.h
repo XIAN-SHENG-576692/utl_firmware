@@ -22,8 +22,8 @@ int COMMAND_RECEIVER_send_response(
 
 typedef struct
 {
-    int (*start)(void);
-    int (*end)(void);
+    void (*start)(void);
+    void (*end)(void);
 } COMMAND_RECEIVER_CALLBACK;
 
 typedef struct

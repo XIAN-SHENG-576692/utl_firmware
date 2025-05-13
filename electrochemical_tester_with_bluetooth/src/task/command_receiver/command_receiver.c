@@ -43,11 +43,7 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
         // callback
         if(_cfg->callback.start != NULL)
         {
-            err = _cfg->callback.start();
-        }
-		if (err) {
-            atomic_store(&_state, COMMAND_RECEIVER_STATE_ERROR);
-            return err;
+            _cfg->callback.start();
         }
 
         // Check
@@ -147,11 +143,7 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
         // callback
         if(_cfg->callback.end != NULL)
         {
-            err = _cfg->callback.end();
-        }
-        if (err) {
-            atomic_store(&_state, COMMAND_RECEIVER_STATE_ERROR);
-            return err;
+            _cfg->callback.end();
         }
 	}
 

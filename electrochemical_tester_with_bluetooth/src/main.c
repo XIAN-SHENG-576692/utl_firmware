@@ -99,20 +99,20 @@ static k_tid_t ad5940_task_adc_tid;
 static struct k_thread ad5940_task_adc_thread;
 K_THREAD_STACK_DEFINE(ad5940_task_adc_stack, 4096);
 
-int AD5940_TASK_ADC_wait_ad5940_intc_triggered(void)
-{
-	return ad5940_intc0_lock_wait();
-}
-
 volatile static atomic_uint_fast8_t AD5940_TASK_ADC_heartbeat_count = 0;
-int AD5940_TASK_ADC_add_heartbeat(void)
+void AD5940_TASK_ADC_add_heartbeat(void)
 {
 	atomic_fetch_add(&AD5940_TASK_ADC_heartbeat_count, 1);
-	return 0;
+	return;
 }
 uint8_t AD5940_TASK_ADC_read_heartbeat(void)
 {
     return atomic_load(&AD5940_TASK_ADC_heartbeat_count);
+}
+
+int AD5940_TASK_ADC_wait_ad5940_intc_triggered(void)
+{
+	return ad5940_intc0_lock_wait();
 }
 
 AD5940_TASK_ADC_CFG ad5940_task_adc_cfg = {
@@ -129,7 +129,22 @@ static k_tid_t ad5940_task_command_tid;
 static struct k_thread ad5940_task_command_thread;
 K_THREAD_STACK_DEFINE(ad5940_task_command_stack, 16384);
 
+volatile static atomic_uint_fast8_t AD5940_TASK_COMMAND_heartbeat_count = 0;
+void AD5940_TASK_COMMAND_add_heartbeat(void)
+{
+	atomic_fetch_add(&AD5940_TASK_COMMAND_heartbeat_count, 1);
+	return;
+}
+uint8_t AD5940_TASK_COMMAND_read_heartbeat(void)
+{
+    return atomic_load(&AD5940_TASK_COMMAND_heartbeat_count);
+}
+
 AD5940_TASK_COMMAND_CFG ad5940_task_command_cfg = {
+	.callback = {
+		.end = AD5940_TASK_COMMAND_add_heartbeat,
+		.start = AD5940_TASK_COMMAND_add_heartbeat,
+	},
 	.param = {
 		.HstiaRtiaSel = MAIN_AD5940_HSTIARTIA,
 		
@@ -169,6 +184,17 @@ static k_tid_t command_receiver_tid;
 static struct k_thread command_receiver_thread;
 K_THREAD_STACK_DEFINE(command_receiver_stack, 4096);
 
+volatile static atomic_uint_fast8_t COMMAND_RECEIVER_heartbeat_count = 0;
+void COMMAND_RECEIVER_add_heartbeat(void)
+{
+	atomic_fetch_add(&COMMAND_RECEIVER_heartbeat_count, 1);
+	return;
+}
+uint8_t COMMAND_RECEIVER_read_heartbeat(void)
+{
+    return atomic_load(&COMMAND_RECEIVER_heartbeat_count);
+}
+
 int COMMAND_RECEIVER_wait_command_received(
 	uint8_t **const command,
 	uint16_t *const command_length
@@ -201,6 +227,10 @@ int COMMAND_RECEIVER_send_response(
 }
 
 COMMAND_RECEIVER_CFG command_receiver_cfg = {
+	.callback = {
+		.end = COMMAND_RECEIVER_add_heartbeat,
+		.start = COMMAND_RECEIVER_add_heartbeat,
+	},
 	.param = {
 		.ad5940_task_command_param = &ad5940_task_command_cfg.param,
 	},
@@ -213,14 +243,25 @@ static k_tid_t ad5940_adc_sender_tid;
 static struct k_thread ad5940_adc_sender_thread;
 K_THREAD_STACK_DEFINE(ad5940_adc_sender_stack, 4096);
 
-int ad5940_adc_sender(void)
+volatile static atomic_uint_fast8_t AD5940_ADC_SENDER_heartbeat_count = 0;
+void AD5940_ADC_SENDER_add_heartbeat(void)
+{
+	atomic_fetch_add(&AD5940_ADC_SENDER_heartbeat_count, 1);
+	return;
+}
+uint8_t AD5940_ADC_SENDER_read_heartbeat(void)
+{
+    return atomic_load(&AD5940_ADC_SENDER_heartbeat_count);
+}
+
+int AD5940_ADC_SENDER_run(void)
 {
 	int err;
 	AD5940_TASK_ADC_RESULT result;
 	#define AD5940_ADC_SENDER_LENGTH (1 + 1 + sizeof(AD5940_TASK_ADC_RESULT))
 	uint8_t ble_packet[AD5940_ADC_SENDER_LENGTH];
 	ble_packet[0] = 0x02;
-	ble_packet[1] = 0x01;
+	ble_packet[1] = 0x02;
 	for(;;)
 	{
 		err = AD5940_TASK_ADC_take_result_quene(
@@ -239,11 +280,43 @@ int ad5940_adc_sender(void)
 	}
 }
 
+// ==================================================
+// Watch dog timer
+typedef struct
+{
+    uint8_t last_heartbeat;
+    uint8_t error_count;
+} WDT_ERROR_CHECKER;
+
+int WDT_update_checker(
+	WDT_ERROR_CHECKER *const checker,
+	const uint8_t new_heartbeat,
+	const uint8_t max_error_count
+)
+{
+	if(checker->last_heartbeat == new_heartbeat)
+	{
+		if(checker->error_count < max_error_count)
+		{
+			checker->error_count++;
+		}
+		else
+		{
+			return 1;
+		}
+	}
+	else
+	{
+		checker->error_count = 0;
+		checker->last_heartbeat = new_heartbeat;
+	}
+	return 0;
+}
+
 int main(void)
 {
+	int err = 0;
 	{
-		int err = 0;
-
 		err = ad5940_intc0_lock_init_impl_zephyr();
 		if (err) return err;
 
@@ -260,7 +333,8 @@ int main(void)
 	
 		err = AD5940_MAIN_init(
 			ad5940_controller_buffer,
-			AD5940_CONTROLLER_BUFFER_SIZE
+			AD5940_CONTROLLER_BUFFER_SIZE,
+			2
 		);
 		if (err) return err;
 	
@@ -268,8 +342,8 @@ int main(void)
 		if (err) return err;
 		BLE_SIMPLE_IMPL_NRF_wait_inited();
 		
-		err = watchdog0_init();
-		if (err) return err;
+		// err = watchdog0_init();
+		// if (err) return err;
 	
 		// ==================================================
 		// AD5940 initialize parameters
@@ -287,7 +361,7 @@ int main(void)
 		if (err) return err;
 
 		// ==================================================
-		// AD5940 TASK
+		// AD5940 task
 
 		AD5940_TASK_init_impl_zephyr();
 
@@ -345,32 +419,85 @@ int main(void)
 			&ad5940_adc_sender_thread,
 			ad5940_adc_sender_stack,
 			K_THREAD_STACK_SIZEOF(ad5940_adc_sender_stack),
-			ad5940_adc_sender,
+			AD5940_ADC_SENDER_run,
 			NULL, NULL, NULL,
 			5, 0,
 			K_NO_WAIT
 		);
 	}
 
-	watchdog0_feed();
-	uint8_t wdt_flag = 0;
-	#define WDT_AD5940_TASK_ADC_FLAG (1U << 0)
-	#define WDT_AD5940_TASK_COMMAND_FLAG (1U << 1)
-	#define WDT_COMMAND_RECEIVER_FLAG (1U << 2)
+	// ==================================================
+	// Watch dog timer
+
+	err = watchdog0_init();
+	if (err) return err;
+
+	// watchdog0_feed();
+	
+	#define WDT_ALLOW_ERROR_COUNT_MAX 3
+	WDT_ERROR_CHECKER wdt_ad5940_task_adc_checker = {
+		.error_count = 0,
+		.last_heartbeat = 0,
+	};
+	WDT_ERROR_CHECKER wdt_ad5940_task_command_checker = {
+		.error_count = 0,
+		.last_heartbeat = 0,
+	};
+	WDT_ERROR_CHECKER command_receiver_checker = {
+		.error_count = 0,
+		.last_heartbeat = 0,
+	};
 	for(;;)
 	{
+		// ==================================================
+		// AD5940 task
+		// ADC
+		if(AD5940_TASK_ADC_get_state() == AD5940_TASK_ADC_STATE_IDLE)
+		{
+			wdt_ad5940_task_adc_checker.error_count = 0;
+			wdt_ad5940_task_adc_checker.last_heartbeat = AD5940_TASK_ADC_read_heartbeat();
+		}
+		else
+		{
+			err = WDT_update_checker(
+				&wdt_ad5940_task_adc_checker,
+				AD5940_TASK_ADC_read_heartbeat(),
+				WDT_ALLOW_ERROR_COUNT_MAX
+			);
+			if(err) return err;
+		}
+		// Command
+		if(AD5940_TASK_COMMAND_get_state() == AD5940_TASK_COMMAND_STATE_IDLE)
+		{
+			wdt_ad5940_task_command_checker.error_count = 0;
+			wdt_ad5940_task_command_checker.last_heartbeat = AD5940_TASK_COMMAND_read_heartbeat();
+		}
+		else
+		{
+			err = WDT_update_checker(
+				&wdt_ad5940_task_command_checker,
+				AD5940_TASK_COMMAND_read_heartbeat(),
+				WDT_ALLOW_ERROR_COUNT_MAX
+			);
+			if(err) return err;
+		}
 		// ==================================================
 		// Command Receiver
 		if(COMMAND_RECEIVER_get_state() == COMMAND_RECEIVER_STATE_IDLE)
 		{
-			wdt_flag &= ~WDT_COMMAND_RECEIVER_FLAG;
+			command_receiver_checker.error_count = 0;
+			command_receiver_checker.last_heartbeat = COMMAND_RECEIVER_read_heartbeat();
 		}
 		else
 		{
-			if(wdt_flag & WDT_COMMAND_RECEIVER_FLAG) return 1;
-			wdt_flag |= WDT_COMMAND_RECEIVER_FLAG;
+			err = WDT_update_checker(
+				&command_receiver_checker,
+				COMMAND_RECEIVER_read_heartbeat(),
+				WDT_ALLOW_ERROR_COUNT_MAX
+			);
+			if(err) return err;
 		}
-    	k_sleep(K_MSEC(4.5e3));
+    	k_sleep(K_MSEC(4.5e2));
 		watchdog0_feed();
 	}
 

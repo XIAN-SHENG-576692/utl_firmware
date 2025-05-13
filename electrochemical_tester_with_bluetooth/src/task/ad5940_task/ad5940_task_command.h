@@ -108,8 +108,8 @@ typedef struct
 
 typedef struct
 {
-    int (*start)(void);
-    int (*end)(void);
+    void (*start)(void);
+    void (*end)(void);
 } AD5940_TASK_COMMAND_CALLBACK;
 
 typedef struct

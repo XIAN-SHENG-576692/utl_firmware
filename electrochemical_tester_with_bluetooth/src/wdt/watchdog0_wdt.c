@@ -50,7 +50,7 @@
 #endif
 
 #ifndef WDT_MAX_WINDOW
-#define WDT_MAX_WINDOW  50000U
+#define WDT_MAX_WINDOW  500U
 #endif
 
 #ifndef WDT_MIN_WINDOW

@@ -49,9 +49,9 @@ int AD5940_TASK_ADC_release_access_length_lock(void)
     return 0;
 }
 
-int AD5940_TASK_ADC_put_quene(AD5940_TASK_ADC_RESULT adc_result)
+int AD5940_TASK_ADC_put_quene(const AD5940_TASK_ADC_RESULT *const adc_result)
 {
-    return k_msgq_put(&_quene_adc, &adc_result, K_NO_WAIT);
+    return k_msgq_put(&_quene_adc, adc_result, K_NO_WAIT);
 }
 
 int AD5940_TASK_ADC_take_quene(AD5940_TASK_ADC_RESULT *const adc_result)

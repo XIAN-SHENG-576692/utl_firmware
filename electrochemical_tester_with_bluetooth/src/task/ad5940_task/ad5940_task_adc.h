@@ -10,9 +10,9 @@ extern "C"
 
 typedef struct
 {
-    uint32_t adc_buffer;
     uint16_t adc_buffer_index;
     uint16_t adc_buffer_length;
+    uint32_t adc_buffer;
 } AD5940_TASK_ADC_RESULT;
 
 // ==================================================
@@ -20,7 +20,7 @@ typedef struct
 int AD5940_TASK_ADC_get_access_length_lock(void);
 int AD5940_TASK_ADC_release_access_length_lock(void);
 
-int AD5940_TASK_ADC_put_quene(AD5940_TASK_ADC_RESULT adc_result);
+int AD5940_TASK_ADC_put_quene(const AD5940_TASK_ADC_RESULT *const adc_result);
 int AD5940_TASK_ADC_take_quene(AD5940_TASK_ADC_RESULT *const adc_result);
 
 int AD5940_TASK_ADC_wait_ad5940_intc_triggered(void);
@@ -28,8 +28,8 @@ int AD5940_TASK_ADC_wait_ad5940_intc_triggered(void);
 
 typedef struct
 {
-    int (*start)(void);
-    int (*end)(void);
+    void (*start)(void);
+    void (*end)(void);
 } AD5940_TASK_ADC_CALLBACK;
 
 typedef struct

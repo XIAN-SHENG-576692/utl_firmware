@@ -51,11 +51,7 @@ AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg)
         // callback
         if(_cfg->callback.start != NULL)
         {
-            err = _cfg->callback.start();
-        }
-        if (err) {
-            atomic_store(&_state, AD5940_TASK_ADC_STATE_ERROR);
-            return err;
+            _cfg->callback.start();
         }
 
         AD5940_TASK_ADC_get_access_length_lock();
@@ -71,12 +67,16 @@ AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg)
             &result.adc_buffer, 
             &MCU_FIFO_count
         );
+		if (err) {
+            atomic_store(&_state, AD5940_TASK_ADC_STATE_ERROR);
+            return err;
+        }
         if(_adc_buffer_index >= _adc_buffer_length)
         {
             _adc_buffer_index = 0;
             _adc_buffer_length = 0;
         }
-        AD5940_TASK_ADC_put_quene(result);
+        AD5940_TASK_ADC_put_quene(&result);
         AD5940_TASK_ADC_release_access_length_lock();
 
         atomic_store(&_state, AD5940_TASK_ADC_STATE_IDLE);
@@ -84,11 +84,7 @@ AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg)
         // callback
         if(_cfg->callback.end != NULL)
         {
-            err = _cfg->callback.end();
-        }
-        if (err) {
-            atomic_store(&_state, AD5940_TASK_ADC_STATE_ERROR);
-            return err;
+            _cfg->callback.end();
         }
 	}
 

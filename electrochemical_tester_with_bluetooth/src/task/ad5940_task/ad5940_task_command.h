@@ -10,9 +10,6 @@ extern "C"
 
 // ==================================================
 // PORT
-int AD5940_TASK_COMMAND_get_access_state_lock(void);
-int AD5940_TASK_COMMAND_release_access_state_lock(void);
-
 int AD5940_TASK_COMMAND_get_access_measurement_param_lock(void);
 int AD5940_TASK_COMMAND_release_access_measurement_param_lock(void);
 

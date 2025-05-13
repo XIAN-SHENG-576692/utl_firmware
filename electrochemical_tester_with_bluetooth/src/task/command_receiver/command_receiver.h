@@ -18,8 +18,6 @@ int COMMAND_RECEIVER_send_response(
     uint8_t *const command,
     const uint16_t command_length
 );
-int COMMAND_RECEIVER_get_access_state_lock(void);
-int COMMAND_RECEIVER_release_access_state_lock(void);
 // ==================================================
 
 typedef struct

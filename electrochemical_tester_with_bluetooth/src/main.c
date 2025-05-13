@@ -9,7 +9,7 @@
  */
 
 #include <stdio.h>
-
+#include <stdatomic.h>
 #include <soc.h>
 
 #include <zephyr/device.h>
@@ -104,7 +104,22 @@ int AD5940_TASK_ADC_wait_ad5940_intc_triggered(void)
 	return ad5940_intc0_lock_wait();
 }
 
+volatile static atomic_uint_fast8_t AD5940_TASK_ADC_heartbeat_count = 0;
+int AD5940_TASK_ADC_add_heartbeat(void)
+{
+	atomic_fetch_add(&AD5940_TASK_ADC_heartbeat_count, 1);
+	return 0;
+}
+uint8_t AD5940_TASK_ADC_read_heartbeat(void)
+{
+    return atomic_load(&AD5940_TASK_ADC_heartbeat_count);
+}
+
 AD5940_TASK_ADC_CFG ad5940_task_adc_cfg = {
+	.callback = {
+		.end = AD5940_TASK_ADC_add_heartbeat,
+		.start = AD5940_TASK_ADC_add_heartbeat,
+	},
 };
 
 // Command

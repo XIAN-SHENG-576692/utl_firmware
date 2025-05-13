@@ -17,9 +17,6 @@ typedef struct
 
 // ==================================================
 // PORT
-int AD5940_TASK_ADC_get_access_state_lock(void);
-int AD5940_TASK_ADC_release_access_state_lock(void);
-
 int AD5940_TASK_ADC_get_access_length_lock(void);
 int AD5940_TASK_ADC_release_access_length_lock(void);
 

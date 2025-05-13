@@ -4,14 +4,12 @@
 
 // ==================================================
 // ADC
-static K_MUTEX_DEFINE(_mutex_adc_state);
 static K_MUTEX_DEFINE(_mutex_adc_length);
 #define MAX_QUEUE 8
 K_MSGQ_DEFINE(_quene_adc, sizeof(AD5940_TASK_ADC_RESULT), MAX_QUEUE, 4);
 
 // ==================================================
 // Command
-static K_MUTEX_DEFINE(_mutex_command_state);
 static K_MUTEX_DEFINE(_mutex_command_measurement_param);
 
 static K_MUTEX_DEFINE(_mutex_command_measurement_triggered);
@@ -22,14 +20,10 @@ int AD5940_TASK_init_impl_zephyr(void)
     int err = 0;
 
     // ADC
-    err = k_mutex_init(&_mutex_adc_state);
-    if(err) return err;
     err = k_mutex_init(&_mutex_adc_length);
     if(err) return err;
 
     // Command
-    err = k_mutex_init(&_mutex_command_state);
-    if(err) return err;
     err = k_mutex_init(&_mutex_command_measurement_param);
     if(err) return err;
     err = k_mutex_init(&_mutex_command_measurement_triggered);
@@ -42,17 +36,6 @@ int AD5940_TASK_init_impl_zephyr(void)
 
 // ==================================================
 // ADC
-int AD5940_TASK_ADC_get_access_state_lock(void)
-{
-    k_mutex_lock(&_mutex_adc_state, K_FOREVER);
-    return 0;
-}
-
-int AD5940_TASK_ADC_release_access_state_lock(void)
-{
-    k_mutex_unlock(&_mutex_adc_state);
-    return 0;
-}
 
 int AD5940_TASK_ADC_get_access_length_lock(void)
 {
@@ -78,17 +61,6 @@ int AD5940_TASK_ADC_take_quene(AD5940_TASK_ADC_RESULT *const adc_result)
 
 // ==================================================
 // Command
-int AD5940_TASK_COMMAND_get_access_state_lock(void)
-{
-    k_mutex_lock(&_mutex_command_state, K_FOREVER);
-    return 0;
-}
-
-int AD5940_TASK_COMMAND_release_access_state_lock(void)
-{
-    k_mutex_unlock(&_mutex_command_state);
-    return 0;
-}
 
 int AD5940_TASK_COMMAND_get_access_measurement_param_lock(void)
 {

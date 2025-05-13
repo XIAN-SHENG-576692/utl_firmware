@@ -11,9 +11,6 @@ int AD5940_TASK_init_impl_zephyr(void);
 
 // ==================================================
 // ADC
-int AD5940_TASK_ADC_get_access_state_lock(void);
-int AD5940_TASK_ADC_release_access_state_lock(void);
-
 int AD5940_TASK_ADC_get_access_length_lock(void);
 int AD5940_TASK_ADC_release_access_length_lock(void);
 
@@ -22,9 +19,6 @@ int AD5940_TASK_ADC_take_quene(AD5940_TASK_ADC_RESULT *const adc_result);
 
 // ==================================================
 // Command
-int AD5940_TASK_COMMAND_get_access_state_lock(void);
-int AD5940_TASK_COMMAND_release_access_state_lock(void);
-
 int AD5940_TASK_COMMAND_get_access_measurement_param_lock(void);
 int AD5940_TASK_COMMAND_release_access_measurement_param_lock(void);
 

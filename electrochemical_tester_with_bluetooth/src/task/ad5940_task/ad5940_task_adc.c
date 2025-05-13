@@ -1,19 +1,17 @@
 #include "ad5940_task_adc.h"
 
+#include <stdatomic.h>
+
 #include "ad5940_task_private.h"
 
 #include "ad5940_electrochemical_interrupt.h"
 
 static const AD5940_TASK_ADC_CFG *_cfg;
-static AD5940_TASK_ADC_STATE _state = AD5940_TASK_ADC_STATE_UNINITIALIZED;
+static volatile _Atomic AD5940_TASK_ADC_STATE _state = AD5940_TASK_ADC_STATE_UNINITIALIZED;
 
 AD5940_TASK_ADC_STATE AD5940_TASK_ADC_get_state(void)
 {
-    AD5940_TASK_COMMAND_STATE copy;
-    AD5940_TASK_ADC_get_access_state_lock();
-    copy = _state;
-    AD5940_TASK_ADC_release_access_state_lock();
-    return copy;
+    return atomic_load(&_state);
 }
 
 static uint16_t _adc_buffer_index = 0;
@@ -40,26 +38,24 @@ AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg)
     int err = 0;
     _cfg = cfg;
 
-    AD5940_TASK_ADC_get_access_state_lock();
-    _state = AD5940_TASK_ADC_STATE_IDLE;
-    AD5940_TASK_ADC_release_access_state_lock();
+    atomic_store(&_state, AD5940_TASK_ADC_STATE_IDLE);
 
 	for (;;) {
         err = AD5940_TASK_ADC_wait_ad5940_intc_triggered();
 		if (err) {
-            AD5940_TASK_ADC_get_access_state_lock();
-            _state = AD5940_TASK_COMMAND_STATE_ERROR;
-            AD5940_TASK_ADC_release_access_state_lock();
+            atomic_store(&_state, AD5940_TASK_ADC_STATE_ERROR);
             return err;
         }
-        AD5940_TASK_ADC_get_access_state_lock();
-        _state = AD5940_TASK_COMMAND_STATE_EXECUTING;
-        AD5940_TASK_ADC_release_access_state_lock();
+        atomic_store(&_state, AD5940_TASK_ADC_STATE_EXECUTING);
 
         // callback
         if(_cfg->callback.start != NULL)
         {
-            _cfg->callback.start();
+            err = _cfg->callback.start();
+        }
+        if (err) {
+            atomic_store(&_state, AD5940_TASK_ADC_STATE_ERROR);
+            return err;
         }
 
         AD5940_TASK_ADC_get_access_length_lock();
@@ -83,14 +79,16 @@ AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg)
         AD5940_TASK_ADC_put_quene(result);
         AD5940_TASK_ADC_release_access_length_lock();
 
-        AD5940_TASK_ADC_get_access_state_lock();
-        _state = AD5940_TASK_COMMAND_STATE_IDLE;
-        AD5940_TASK_ADC_release_access_state_lock();
+        atomic_store(&_state, AD5940_TASK_ADC_STATE_IDLE);
 
         // callback
         if(_cfg->callback.end != NULL)
         {
-            _cfg->callback.end();
+            err = _cfg->callback.end();
+        }
+        if (err) {
+            atomic_store(&_state, AD5940_TASK_ADC_STATE_ERROR);
+            return err;
         }
 	}
 

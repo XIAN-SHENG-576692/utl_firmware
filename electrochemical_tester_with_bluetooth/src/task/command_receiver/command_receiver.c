@@ -1,20 +1,18 @@
 #include "command_receiver.h"
 
+#include <stdatomic.h>
+
 #include "ad5940_task_command.h"
 
 static const COMMAND_RECEIVER_CFG *_cfg;
-static COMMAND_RECEIVER_STATE _state = COMMAND_RECEIVER_STATE_UNINITIALIZED;
+static volatile _Atomic COMMAND_RECEIVER_STATE _state = COMMAND_RECEIVER_STATE_UNINITIALIZED;
 
 #define BUFF_LENGTH 70
 static uint8_t response[BUFF_LENGTH];
 
 COMMAND_RECEIVER_STATE COMMAND_RECEIVER_get_state(void)
 {
-    COMMAND_RECEIVER_STATE copy;
-    COMMAND_RECEIVER_get_access_state_lock();
-    copy = _state;
-    COMMAND_RECEIVER_release_access_state_lock();
-    return copy;
+    return atomic_load(&_state);
 }
 
 int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
@@ -28,9 +26,7 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
     AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION parameters;
     AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING electrode_routing;
 
-    COMMAND_RECEIVER_get_access_state_lock();
-    _state = COMMAND_RECEIVER_STATE_IDLE;
-    COMMAND_RECEIVER_release_access_state_lock();
+    atomic_store(&_state, COMMAND_RECEIVER_STATE_IDLE);
 
 	for (;;) {
         err = COMMAND_RECEIVER_wait_command_received(
@@ -39,19 +35,19 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
         );
 
 		if (err) {
-            COMMAND_RECEIVER_get_access_state_lock();
-            _state = COMMAND_RECEIVER_STATE_ERROR;
-            COMMAND_RECEIVER_release_access_state_lock();
+            atomic_store(&_state, COMMAND_RECEIVER_STATE_ERROR);
             return err;
         }
-        COMMAND_RECEIVER_get_access_state_lock();
-        _state = COMMAND_RECEIVER_STATE_EXECUTING;
-        COMMAND_RECEIVER_release_access_state_lock();
+        atomic_store(&_state, COMMAND_RECEIVER_STATE_EXECUTING);
 
         // callback
         if(_cfg->callback.start != NULL)
         {
-            _cfg->callback.start();
+            err = _cfg->callback.start();
+        }
+		if (err) {
+            atomic_store(&_state, COMMAND_RECEIVER_STATE_ERROR);
+            return err;
         }
 
         // Check
@@ -146,14 +142,16 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
         default:
             break;
         }
-        COMMAND_RECEIVER_get_access_state_lock();
-        _state = COMMAND_RECEIVER_STATE_IDLE;
-        COMMAND_RECEIVER_release_access_state_lock();
+        atomic_store(&_state, COMMAND_RECEIVER_STATE_IDLE);
 
         // callback
         if(_cfg->callback.end != NULL)
         {
-            _cfg->callback.end();
+            err = _cfg->callback.end();
+        }
+        if (err) {
+            atomic_store(&_state, COMMAND_RECEIVER_STATE_ERROR);
+            return err;
         }
 	}
 

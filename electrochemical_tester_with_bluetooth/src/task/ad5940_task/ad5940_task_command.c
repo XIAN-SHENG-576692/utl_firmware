@@ -1,5 +1,7 @@
 #include "ad5940_task_command.h"
 
+#include <stdatomic.h>
+
 #include "ad5940_task_private.h"
 
 #include "ad5940_electrochemical_ca.h"
@@ -7,7 +9,7 @@
 #include "ad5940_electrochemical_dpv.h"
 
 static const AD5940_TASK_COMMAND_CFG *_cfg;
-static AD5940_TASK_COMMAND_STATE _state = AD5940_TASK_COMMAND_STATE_UNINITIALIZED;
+static volatile _Atomic AD5940_TASK_COMMAND_STATE _state = AD5940_TASK_COMMAND_STATE_UNINITIALIZED;
 
 static AD5940_TASK_ELECTROCHEMICAL_TYPE _type;
 static const AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION *_parameters;
@@ -15,11 +17,7 @@ static const AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING *_routing;
 
 AD5940_TASK_COMMAND_STATE AD5940_TASK_COMMAND_get_state(void)
 {
-    AD5940_TASK_COMMAND_STATE copy;
-    AD5940_TASK_COMMAND_get_access_state_lock();
-    copy = _state;
-    AD5940_TASK_COMMAND_release_access_state_lock();
-    return copy;
+    return atomic_load(&_state);
 }
 
 int AD5940_TASK_COMMAND_measure(
@@ -130,26 +128,24 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         
     };
 
-    AD5940_TASK_COMMAND_get_access_state_lock();
-    _state = AD5940_TASK_COMMAND_STATE_IDLE;
-    AD5940_TASK_COMMAND_release_access_state_lock();
+    atomic_store(&_state, AD5940_TASK_COMMAND_STATE_IDLE);
 
 	for (;;) {
         err = AD5940_TASK_COMMAND_wait_measurement();
 		if (err) {
-            AD5940_TASK_COMMAND_get_access_state_lock();
-            _state = AD5940_TASK_COMMAND_STATE_ERROR;
-            AD5940_TASK_COMMAND_release_access_state_lock();
+            atomic_store(&_state, AD5940_TASK_COMMAND_STATE_ERROR);
             return err;
         }
-        AD5940_TASK_COMMAND_get_access_state_lock();
-        _state = AD5940_TASK_COMMAND_STATE_EXECUTING;
-        AD5940_TASK_COMMAND_release_access_state_lock();
+        atomic_store(&_state, AD5940_TASK_COMMAND_STATE_EXECUTING);
         
         // callback
         if(_cfg->callback.start != NULL)
         {
-            _cfg->callback.start();
+            err = _cfg->callback.start();
+        }
+        if (err) {
+            atomic_store(&_state, AD5940_TASK_COMMAND_STATE_ERROR);
+            return err;
         }
 
         AD5940_TASK_COMMAND_get_access_measurement_param_lock();
@@ -234,14 +230,16 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         
         AD5940_TASK_COMMAND_release_access_measurement_param_lock();
 
-        AD5940_TASK_COMMAND_get_access_state_lock();
-        _state = AD5940_TASK_COMMAND_STATE_IDLE;
-        AD5940_TASK_COMMAND_release_access_state_lock();
+        atomic_store(&_state, AD5940_TASK_COMMAND_STATE_IDLE);
 
         // callback
         if(_cfg->callback.end != NULL)
         {
-            _cfg->callback.end();
+            err = _cfg->callback.end();
+        }
+        if (err) {
+            atomic_store(&_state, AD5940_TASK_COMMAND_STATE_ERROR);
+            return err;
         }
 	}
 

@@ -62,9 +62,9 @@ AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg)
         _adc_buffer_index++;
         uint16_t MCU_FIFO_count;
         err = AD5940_ELECTROCHEMICAL_interrupt(
-            1,
+            ADC_UNIT,
             (_adc_buffer_index < _adc_buffer_length) ? -1 : 0,
-            &result.adc_buffer, 
+            result.adc_buffer, 
             &MCU_FIFO_count
         );
 		if (err) {

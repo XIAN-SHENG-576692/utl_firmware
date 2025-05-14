@@ -103,7 +103,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         .LFOSC_frequency = _cfg->param.lfoscFrequency,
         .DataType = _cfg->param.DataType,
         .FifoSrc = _cfg->param.FifoSrc,
-        .FIFO_thresh = 1,   // Set to 1 to trigger callback whenever new ADC data is stored in the FIFO
+        .FIFO_thresh = ADC_UNIT,
     };
 
     lpdac_to_lptia_config = (AD5940_ELECTROCHEMICAL_LPDAC_TO_LPTIA_CONFIG) {

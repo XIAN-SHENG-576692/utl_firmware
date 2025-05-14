@@ -8,11 +8,14 @@ extern "C"
 #include "ad5940.h"
 #include "ad5940_electrochemical_utils.h"
 
+// Set ADC_UNIT to 1 to enable callback when new ADC data is written to the FIFO.
+#define ADC_UNIT 1
+
 typedef struct
 {
     uint16_t adc_buffer_index;
     uint16_t adc_buffer_length;
-    uint32_t adc_buffer;
+    uint32_t adc_buffer[ADC_UNIT];
 } AD5940_TASK_ADC_RESULT;
 
 // ==================================================

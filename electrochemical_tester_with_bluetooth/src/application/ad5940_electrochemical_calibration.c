@@ -37,28 +37,28 @@ AD5940Err ad5940_electrochemical_calibration(
 		if(error) return error;
 	}
 
-	// // cal LPTIA
-	// {
-	// 	LPTIAOffsetCal_Type LPTIAOffsetCal;
-	// 	LPTIAOffsetCal = (LPTIAOffsetCal_Type) {
-	// 		.AdcClkFreq = parameters->clockConfig.AdcClkFreq,
-	// 		.ADCPga = parameters->ADCPga,
-	// 		.ADCSinc2Osr = parameters->ADCSinc2Osr,
-	// 		.ADCSinc3Osr = parameters->ADCSinc3Osr,
-	// 		.DacData12Bit = 0,
-	// 		.DacData6Bit = 0,
-	// 		.LpAmpPwrMod = parameters->LpAmpPwrMod,
-	// 		.LpAmpSel = parameters->LpAmpSel,
-	// 		.LpDacVzeroMux = LPDACVZERO_12BIT,
-	// 		.LpTiaRtia = parameters->LpTiaRtia,
-	// 		.LpTiaSW = LPTIASW(5) | LPTIASW(9),
-	// 		.SettleTime10us = parameters->SettleTime10us,
-	// 		.SysClkFreq = parameters->clockConfig.SysClkFreq,
-	// 		.TimeOut10us = parameters->TimeOut10us,
-	// 	};
-	// 	error = AD5940_LPTIAOffsetCal(&LPTIAOffsetCal);
-	// 	if(error) return error;
-	// }
+	// cal LPTIA
+	{
+		LPTIAOffsetCal_Type LPTIAOffsetCal;
+		LPTIAOffsetCal = (LPTIAOffsetCal_Type) {
+			.AdcClkFreq = parameters->clockConfig.AdcClkFreq,
+			.ADCPga = parameters->ADCPga,
+			.ADCSinc2Osr = parameters->ADCSinc2Osr,
+			.ADCSinc3Osr = parameters->ADCSinc3Osr,
+			.DacData12Bit = 0,
+			.DacData6Bit = 0,
+			.LpAmpPwrMod = parameters->LpAmpPwrMod,
+			.LpAmpSel = parameters->LpAmpSel,
+			.LpDacVzeroMux = LPDACVZERO_12BIT,
+			.LpTiaRtia = parameters->LpTiaRtia,
+			.LpTiaSW = LPTIASW(5) | LPTIASW(9),
+			.SettleTime10us = parameters->SettleTime10us,
+			.SysClkFreq = parameters->clockConfig.SysClkFreq,
+			.TimeOut10us = parameters->TimeOut10us,
+		};
+		error = AD5940_LPTIAOffsetCal(&LPTIAOffsetCal);
+		if(error) return error;
+	}
 
 	{
 		LPRTIACal_Type LPRTIACal;

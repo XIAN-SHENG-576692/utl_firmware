@@ -1,7 +1,8 @@
 #include "ble_simple_impl_zephyr.h"
 
-#include <stdint.h>
+#include <stdatomic.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <zephyr/settings/settings.h>
 
@@ -31,11 +32,11 @@ static const struct bt_data sd[] = {
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_NUS_VAL),
 };
 
-static volatile bool _is_inited = false;
+volatile static atomic_bool _is_inited = false;
 static K_MUTEX_DEFINE(_init_mutex);
 static K_CONDVAR_DEFINE(_init_condvar);
 
-static volatile bool _is_connected = false;
+volatile static atomic_bool _is_connected = false;
 static K_MUTEX_DEFINE(_connection_mutex);
 static K_CONDVAR_DEFINE(_connection_condvar);
 
@@ -110,7 +111,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	request_phy_update(conn);
 
     // k_mutex_lock(&_connection_mutex, K_FOREVER);
-    _is_connected = true;
+	atomic_store(&_is_connected, true);
     k_condvar_broadcast(&_connection_condvar);
     // k_mutex_unlock(&_connection_mutex);
 
@@ -136,7 +137,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 
     // k_mutex_lock(&_connection_mutex, K_FOREVER);
-    _is_connected = false;
+	atomic_store(&_is_connected, false);
     k_condvar_broadcast(&_connection_condvar);
     // k_mutex_unlock(&_connection_mutex);
 
@@ -290,7 +291,7 @@ int peripheral_uart_init(void)
 	LOG_INF("Bluetooth initialized");
 
     // k_mutex_lock(&_init_mutex, K_FOREVER);
-    _is_inited = true;
+	atomic_store(&_is_inited, true);
     k_condvar_broadcast(&_init_condvar);
     // k_mutex_unlock(&_init_mutex);
 
@@ -337,12 +338,12 @@ BLE_SIMPLE_ERROR BLE_SIMPLE_IMPL_NRF_init(void)
 }
 bool BLE_SIMPLE_IMPL_NRF_is_inited(void)
 {
-	return _is_inited;
+	return atomic_load(&_is_inited);
 }
 void BLE_SIMPLE_IMPL_NRF_wait_inited(void)
 {
     k_mutex_lock(&_init_mutex, K_FOREVER);
-    while (!_is_inited) {
+    while (!atomic_load(&_is_inited)) {
         k_condvar_wait(&_init_condvar, &_init_mutex, K_FOREVER);
     }
     k_mutex_unlock(&_init_mutex);
@@ -351,13 +352,13 @@ void BLE_SIMPLE_IMPL_NRF_wait_inited(void)
 
 bool BLE_SIMPLE_is_connected(void)
 {
-	return _is_connected;
+	return atomic_load(&_is_connected);
 }
 
 void BLE_SIMPLE_wait_connected(void)
 {
 	k_mutex_lock(&_connection_mutex, K_FOREVER);
-    while (!_is_connected) {
+    while (!atomic_load(&_is_connected)) {
         k_condvar_wait(&_connection_condvar, &_connection_mutex, K_FOREVER);
     }
     k_mutex_unlock(&_connection_mutex);
@@ -367,7 +368,7 @@ void BLE_SIMPLE_wait_connected(void)
 void BLE_SIMPLE_wait_disconnected(void)
 {
 	k_mutex_lock(&_connection_mutex, K_FOREVER);
-    while (_is_connected) {
+    while (atomic_load(&_is_connected)) {
         k_condvar_wait(&_connection_condvar, &_connection_mutex, K_FOREVER);
     }
     k_mutex_unlock(&_connection_mutex);

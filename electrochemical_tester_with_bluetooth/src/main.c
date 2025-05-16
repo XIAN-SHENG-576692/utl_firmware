@@ -22,6 +22,7 @@
 static LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "ble_simple_impl_zephyr.h"
+#include "kernel_sleep.h"
 
 #include "ad5940_port_intc0_impl_zephyr.h"
 #include "ad5940_port_intc1_impl_zephyr.h"
@@ -42,7 +43,7 @@ static uint16_t ble_packet_buffer_length;
 
 // ==================================================
 // Watch Dog
-#include "watchdog0_wdt.h"
+#include "watchdog0.h"
 
 // ==================================================
 // AD5940 initialize parameters
@@ -53,6 +54,7 @@ static AD5940_CLOCK_INIT_CTX ad5940_clock_init_ctx = {
 #include "ad5940_electrochemical_calibration.h"
 
 #include "utl_ad5940_electrochemical_parameters.h"
+#include "utl_ad5940_temperature_parameters.h"
 
 // Our circuit use it.
 #define MAIN_AD5940_HSTIARTIA HSTIARTIA_10K
@@ -146,32 +148,50 @@ AD5940_TASK_COMMAND_CFG ad5940_task_command_cfg = {
 		.start = AD5940_TASK_COMMAND_add_heartbeat,
 	},
 	.param = {
-		.HstiaRtiaSel = MAIN_AD5940_HSTIARTIA,
-		
+		.common = {
+		},
 		// UTL parameters
 		// You need to set the following parameters:
 		// - ADCRate
-		.ADCRefVolt = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCRefVolt,
-		.ADCPga = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCPga,
-		.ADCSinc2Osr = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCSinc2Osr,
-		.ADCSinc3Osr = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCSinc3Osr,
-		.DftNum = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_DftNum,
-		.DftSrc = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_DftSrc,
-		.HanWinEn = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_HanWinEn,
-		.LpAmpPwrMod = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_LpAmpPwrMod,
-		.LpTiaRtia = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_LpTiaRtia,
+		.electrochemical = {
+			.HstiaRtiaSel = MAIN_AD5940_HSTIARTIA,
+			.ADCRefVolt = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCRefVolt,
+			.ADCPga = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCPga,
+			.ADCSinc2Osr = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCSinc2Osr,
+			.ADCSinc3Osr = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCSinc3Osr,
+			.DftNum = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_DftNum,
+			.DftSrc = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_DftSrc,
+			.HanWinEn = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_HanWinEn,
+			.LpAmpPwrMod = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_LpAmpPwrMod,
+			.LpTiaRtia = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_LpTiaRtia,
 
-		.ADCAvgNum = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCAvgNum,
+			.ADCAvgNum = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCAvgNum,
 
-		.BpNotch = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_BpNotch,
-		.BpSinc3 = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_BpSinc3,
-		.Sinc2NotchEnable = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_Sinc2NotchEnable,
+			.BpNotch = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_BpNotch,
+			.BpSinc3 = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_BpSinc3,
+			.Sinc2NotchEnable = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_Sinc2NotchEnable,
 
-		.LpTiaRf = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_LpTiaRf,
-		.LpTiaRload = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_LpTiaRload,
+			.LpTiaRf = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_LpTiaRf,
+			.LpTiaRload = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_LpTiaRload,
 
-		.DataType = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_DataType,
-		.FifoSrc = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_FifoSrc,
+			.DataType = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_DataType,
+			.FifoSrc = UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_FifoSrc,
+		},
+		// UTL parameters
+		// You need to set the following parameters:
+		// - clockConfig
+		// - lfoscFrequency
+		.temperature = {
+			.ADCAvgNum = UTL_AD5940_TEMPERATURE_PARAMETERS_ADCAvgNum,
+			.ADCPga = UTL_AD5940_TEMPERATURE_PARAMETERS_ADCPga,
+			.ADCSinc2Osr = UTL_AD5940_TEMPERATURE_PARAMETERS_ADCSinc2Osr,
+			.ADCSinc3Osr = UTL_AD5940_TEMPERATURE_PARAMETERS_ADCSinc3Osr,
+			.BpNotch = UTL_AD5940_TEMPERATURE_PARAMETERS_BpNotch,
+			.BpSinc3 = UTL_AD5940_TEMPERATURE_PARAMETERS_BpSinc3,
+			.DataType = UTL_AD5940_TEMPERATURE_PARAMETERS_DataType,
+			.FifoSrc = UTL_AD5940_TEMPERATURE_PARAMETERS_FifoSrc,
+			.Sinc2NotchEnable = UTL_AD5940_TEMPERATURE_PARAMETERS_Sinc2NotchEnable,
+		},
 	},
 };
 
@@ -195,9 +215,9 @@ uint8_t COMMAND_RECEIVER_read_heartbeat(void)
     return atomic_load(&COMMAND_RECEIVER_heartbeat_count);
 }
 
+static atomic_uint_fast32_t entity_id = 0;
 int COMMAND_RECEIVER_wait_command_received(
-	uint8_t **const command,
-	uint16_t *const command_length
+    COMMAND_RECEIVER_START *const start
 ) 
 {
 	BLE_SIMPLE_ERROR err = 0;
@@ -212,9 +232,29 @@ int COMMAND_RECEIVER_wait_command_received(
 	);
 	if(err) return err;
 
-	*command = ble_packet_buffer;
-	*command_length = ble_packet_buffer_length;
+	if(ble_packet_buffer[0] != 0x01) return 0;
 
+	start->type = (COMMAND_RECEIVER_START_TYPE) ble_packet_buffer[1];
+
+	switch (start->type)
+	{
+	case COMMAND_RECEIVER_START_TYPE_STOP:
+		break;
+	case COMMAND_RECEIVER_START_TYPE_ELECTROCHEMICAL_CA:
+	case COMMAND_RECEIVER_START_TYPE_ELECTROCHEMICAL_CV:
+	case COMMAND_RECEIVER_START_TYPE_ELECTROCHEMICAL_DPV:
+		uint8_t *p0 = ble_packet_buffer + 2;
+		uint8_t *p1 = p0;
+		atomic_store(&entity_id, *((uint32_t *) p1));
+		p1 += sizeof(entity_id);
+		memcpy(&start->param.electrochemical.parameters, p1, sizeof(start->param.electrochemical.parameters));
+		p1 += sizeof(start->param.electrochemical.parameters);
+		memcpy(&start->param.electrochemical.routing, p1, sizeof(start->param.electrochemical.routing));
+		p1 += sizeof(start->param.electrochemical.routing);
+		break;
+	default:
+		break;
+	}
 	return err;
 }
 
@@ -258,25 +298,62 @@ int AD5940_ADC_SENDER_run(void)
 {
 	int err;
 	AD5940_TASK_ADC_RESULT result;
-	#define AD5940_ADC_SENDER_LENGTH (1 + 1 + sizeof(AD5940_TASK_ADC_RESULT))
+	#define AD5940_ADC_SENDER_LENGTH (1 + sizeof(entity_id) + 1 + sizeof(result.adc_data_index) + sizeof(result.fifo_buffer[0]))
 	uint8_t ble_packet[AD5940_ADC_SENDER_LENGTH];
 	ble_packet[0] = 0x02;
-	ble_packet[1] = 0x02;
 	for(;;)
 	{
 		err = AD5940_TASK_ADC_take_result_quene(
 			&result
 		);
-		memcpy(
-			ble_packet + 2,
-			&result,
-			sizeof(result)
-		);
+		if(!BLE_SIMPLE_is_connected()) continue;
+
+		uint8_t *p = ble_packet + 1;
+
+		uint_fast32_t id = atomic_load(&entity_id);
+		memcpy(p, &id, sizeof(id));
+		p += sizeof(id);
+
+		uint8_t flag = (uint8_t) result.flag;
+		memcpy(p, &flag, sizeof(flag));
+		p += sizeof(flag);
+
+		memcpy(p, &result.adc_data_index, sizeof(result.adc_data_index));
+		p += sizeof(result.adc_data_index);
+
+		switch (result.flag)
+		{
+		case AD5940_TASK_ADC_RESULT_FLAG_TEMPERATURE:
+		{
+			AD5940_convert_adc_to_temperature(
+				result.fifo_buffer[0],
+				UTL_AD5940_TEMPERATURE_PARAMETERS_ADCPga,
+				(int32_t *) p
+			);
+			p += sizeof(int32_t);
+			break;
+		}
+		case AD5940_TASK_ADC_RESULT_FLAG_HSTIA_CURRENT:
+		{
+			AD5940_convert_adc_to_current(
+				result.fifo_buffer[0],
+				&ad5940_task_command_cfg.param.electrochemical.hsrtia_calibration_result,
+				UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCPga,
+				UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCRefVolt,
+				(int32_t *) p
+			);
+			p += sizeof(int32_t);
+			break;
+		}
+		default:
+			break;
+		}
+
 		err = BLE_SIMPLE_send_packet(
 			ble_packet,
 			AD5940_ADC_SENDER_LENGTH
 		);
-		if(err) return err;
+		// if(err) return err;
 	}
 }
 
@@ -286,17 +363,17 @@ typedef struct
 {
     uint8_t last_heartbeat;
     uint8_t error_count;
+    const uint8_t error_count_allow_max;
 } WDT_ERROR_CHECKER;
 
 int WDT_update_checker(
 	WDT_ERROR_CHECKER *const checker,
-	const uint8_t new_heartbeat,
-	const uint8_t max_error_count
+	const uint8_t new_heartbeat
 )
 {
 	if(checker->last_heartbeat == new_heartbeat)
 	{
-		if(checker->error_count < max_error_count)
+		if(checker->error_count < checker->error_count_allow_max)
 		{
 			checker->error_count++;
 		}
@@ -329,21 +406,12 @@ int main(void)
 		err = AD5940_spi_impl_zephyr_init();
 		if (err) return err;
 	
-    	k_sleep(K_MSEC(1e2));
-	
 		err = AD5940_MAIN_init(
 			ad5940_controller_buffer,
 			AD5940_CONTROLLER_BUFFER_SIZE,
 			2
 		);
 		if (err) return err;
-	
-		err = BLE_SIMPLE_IMPL_NRF_init();
-		if (err) return err;
-		BLE_SIMPLE_IMPL_NRF_wait_inited();
-		
-		// err = watchdog0_init();
-		// if (err) return err;
 	
 		// ==================================================
 		// AD5940 initialize parameters
@@ -377,15 +445,22 @@ int main(void)
 		);
 
 		// Command
-		ad5940_task_command_cfg.param.agpio_cfg = AD5940_EXTERNAL_agpio_cfg;
 
-		ad5940_task_command_cfg.param.lprtia_calibration_result = ad5940_electrochemical_calibration_results.lprtia_calibration_result;
-		ad5940_task_command_cfg.param.hsrtia_calibration_result = ad5940_electrochemical_calibration_results.hsrtia_calibration_result;
+		// common
+		ad5940_task_command_cfg.param.common.agpio_cfg = AD5940_EXTERNAL_agpio_cfg;
 
-		ad5940_task_command_cfg.param.clockConfig = ad5940_clock_init_ctx.clockConfig;
-		ad5940_task_command_cfg.param.lfoscFrequency = ad5940_clock_init_ctx.lfoscFrequency;
+		// electrochemical
+		ad5940_task_command_cfg.param.electrochemical.lprtia_calibration_result = ad5940_electrochemical_calibration_results.lprtia_calibration_result;
+		ad5940_task_command_cfg.param.electrochemical.hsrtia_calibration_result = ad5940_electrochemical_calibration_results.hsrtia_calibration_result;
 
-		ad5940_task_command_cfg.param.ADCRate = ad5940_clock_init_ctx.clockConfig.ADCRate;
+		ad5940_task_command_cfg.param.electrochemical.clockConfig = ad5940_clock_init_ctx.clockConfig;
+		ad5940_task_command_cfg.param.electrochemical.lfoscFrequency = ad5940_clock_init_ctx.lfoscFrequency;
+
+		ad5940_task_command_cfg.param.electrochemical.ADCRate = ad5940_clock_init_ctx.clockConfig.ADCRate;
+
+		// temperature
+		ad5940_task_command_cfg.param.temperature.clockConfig = ad5940_clock_init_ctx.clockConfig;
+		ad5940_task_command_cfg.param.temperature.lfoscFrequency = ad5940_clock_init_ctx.lfoscFrequency;
 
 		ad5940_task_command_tid = k_thread_create(
 			&ad5940_task_command_thread,
@@ -425,27 +500,58 @@ int main(void)
 			K_NO_WAIT
 		);
 	}
-
-	// ==================================================
-	// Watch dog timer
-
+	
 	err = watchdog0_init();
 	if (err) return err;
 
-	// watchdog0_feed();
+	{
+		// Since some AD5940 FIFOs may be blocked upon first use after power-on, 
+		// this operation is necessary to ensure proper functionality.
+		KERNEL_SLEEP_ms(100);
+		err = watchdog0_feed();
+		if (err) return err;
+		AD5940_TASK_MEASUREMENT_PARAM param = {
+			.type = AD5940_TASK_TYPE_TEMPERATURE,
+			.param.temperature = {
+				.sampling_interval = 0.01,
+				.sampling_time = 0.01,
+				.TEMPSENS = 0,
+			},
+		};
+		for(size_t i=0; i<4; i++)
+		{
+			AD5940_TASK_COMMAND_measure(&param);
+			KERNEL_SLEEP_ms(100);
+			err = watchdog0_feed();
+			if (err) return err;
+		}
+	}
 	
-	#define WDT_ALLOW_ERROR_COUNT_MAX 3
+	// BLE
+	err = BLE_SIMPLE_IMPL_NRF_init();
+	if (err) return err;
+	BLE_SIMPLE_IMPL_NRF_wait_inited();
+
+	// ==================================================
+	// Watch dog timer
+	
+	err = watchdog0_feed();
+	if (err) return err;
+	
 	WDT_ERROR_CHECKER wdt_ad5940_task_adc_checker = {
-		.error_count = 0,
 		.last_heartbeat = 0,
+		.error_count = 0,
+		.error_count_allow_max = 1,
 	};
 	WDT_ERROR_CHECKER wdt_ad5940_task_command_checker = {
-		.error_count = 0,
 		.last_heartbeat = 0,
+		.error_count = 0,
+		.error_count_allow_max = 1,
 	};
 	WDT_ERROR_CHECKER command_receiver_checker = {
 		.error_count = 0,
 		.last_heartbeat = 0,
+		.error_count_allow_max = 3,
 	};
 	for(;;)
 	{
@@ -461,8 +567,7 @@ int main(void)
 		{
 			err = WDT_update_checker(
 				&wdt_ad5940_task_adc_checker,
-				AD5940_TASK_ADC_read_heartbeat(),
-				WDT_ALLOW_ERROR_COUNT_MAX
+				AD5940_TASK_ADC_read_heartbeat()
 			);
 			if(err) return err;
 		}
@@ -476,8 +581,7 @@ int main(void)
 		{
 			err = WDT_update_checker(
 				&wdt_ad5940_task_command_checker,
-				AD5940_TASK_COMMAND_read_heartbeat(),
-				WDT_ALLOW_ERROR_COUNT_MAX
+				AD5940_TASK_COMMAND_read_heartbeat()
 			);
 			if(err) return err;
 		}
@@ -492,13 +596,13 @@ int main(void)
 		{
 			err = WDT_update_checker(
 				&command_receiver_checker,
-				COMMAND_RECEIVER_read_heartbeat(),
-				WDT_ALLOW_ERROR_COUNT_MAX
+				COMMAND_RECEIVER_read_heartbeat()
 			);
 			if(err) return err;
 		}
     	k_sleep(K_MSEC(4.5e2));
-		watchdog0_feed();
+		err = watchdog0_feed();
+		if(err) return err;
 	}
 
 	return 0;

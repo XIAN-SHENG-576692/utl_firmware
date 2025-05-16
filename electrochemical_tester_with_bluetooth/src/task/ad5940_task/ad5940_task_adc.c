@@ -4,7 +4,7 @@
 
 #include "ad5940_task_private.h"
 
-#include "ad5940_electrochemical_interrupt.h"
+#include "AD5940_irq_handler.h"
 
 static const AD5940_TASK_ADC_CFG *_cfg;
 static volatile _Atomic AD5940_TASK_ADC_STATE _state = AD5940_TASK_ADC_STATE_UNINITIALIZED;
@@ -14,14 +14,17 @@ AD5940_TASK_ADC_STATE AD5940_TASK_ADC_get_state(void)
     return atomic_load(&_state);
 }
 
-static uint16_t _adc_buffer_index = 0;
-static uint16_t _adc_buffer_length = 0;
+static AD5940_TASK_ADC_RESULT _result = {};
 
-int AD5940_TASK_ADC_reset_length(uint16_t length)
+int AD5940_TASK_ADC_reset(
+    uint8_t flag,
+    uint16_t length
+)
 {
     AD5940_TASK_ADC_get_access_length_lock();
-    _adc_buffer_index = 0;
-    _adc_buffer_length = length;
+    _result.flag = flag;
+    _result.adc_data_index = 0;
+    _result.adc_data_length = length;
     AD5940_TASK_ADC_release_access_length_lock();
     return 0;
 }
@@ -55,28 +58,26 @@ AD5940Err AD5940_TASK_ADC_run(AD5940_TASK_ADC_CFG *const cfg)
         }
 
         AD5940_TASK_ADC_get_access_length_lock();
-        AD5940_TASK_ADC_RESULT result = {
-            .adc_buffer_index = _adc_buffer_index,
-            .adc_buffer_length = _adc_buffer_length,
-        };
-        _adc_buffer_index++;
-        uint16_t MCU_FIFO_count;
-        err = AD5940_ELECTROCHEMICAL_interrupt(
-            ADC_UNIT,
-            (_adc_buffer_index < _adc_buffer_length) ? -1 : 0,
-            result.adc_buffer, 
-            &MCU_FIFO_count
-        );
-		if (err) {
-            atomic_store(&_state, AD5940_TASK_ADC_STATE_ERROR);
-            return err;
-        }
-        if(_adc_buffer_index >= _adc_buffer_length)
+        if(_result.adc_data_index < _result.adc_data_length)
         {
-            _adc_buffer_index = 0;
-            _adc_buffer_length = 0;
+            err = AD5940_irq_handler(
+                ((_result.adc_data_index + 1) < _result.adc_data_length) ? -1 : 0,
+                FIFO_BUFFER_SIZE,
+                _result.fifo_buffer, 
+                &_result.fifo_count
+            );
+            if (err) {
+                atomic_store(&_state, AD5940_TASK_ADC_STATE_ERROR);
+                for(;;) {}
+            }
+            AD5940_TASK_ADC_put_quene(&_result);
+            _result.adc_data_index++;
         }
-        AD5940_TASK_ADC_put_quene(&result);
+        else
+        {
+            _result.adc_data_index = 0;
+            _result.adc_data_length = 0;
+        }
         AD5940_TASK_ADC_release_access_length_lock();
 
         atomic_store(&_state, AD5940_TASK_ADC_STATE_IDLE);

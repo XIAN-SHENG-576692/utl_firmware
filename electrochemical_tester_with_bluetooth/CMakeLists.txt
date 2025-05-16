@@ -39,7 +39,7 @@ target_sources(app PRIVATE
   ./src/port/task/ad5940_task/ad5940_task_impl_zephyr.c
   ./src/port/task/command_receiver/command_receiver_impl_zephyr.c
   ./src/resource/ad5940_hardware.c
-  ./src/wdt/watchdog0_wdt.c
+  ./src/wdt/watchdog0.c
   ./src/task/ad5940_task/ad5940_task_adc.c
   ./src/task/ad5940_task/ad5940_task_command.c
   ./src/task/command_receiver/command_receiver.c

@@ -90,7 +90,12 @@
 			"ad5940_task_impl_zephyr.h": "c",
 			"ad5940_task_adc.h": "c",
 			"ad5940_task_command.h": "c",
-			"stdint.h": "c"
+			"stdint.h": "c",
+			"ad5940_irq_handler.h": "c",
+			"ble_simple_impl_zephyr.h": "c",
+			"stdatomic.h": "c",
+			"atomic": "c",
+			"settings.h": "c"
 		}
 	}
 }

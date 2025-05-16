@@ -20,10 +20,11 @@ int AD5940_TASK_COMMAND_trigger_measurement(void);
 // Type
 
 typedef enum {
-    AD5940_TASK_ELECTROCHEMICAL_TYPE_CA,
-    AD5940_TASK_ELECTROCHEMICAL_TYPE_CV,
-    AD5940_TASK_ELECTROCHEMICAL_TYPE_DPV,
-} AD5940_TASK_ELECTROCHEMICAL_TYPE;
+    AD5940_TASK_TYPE_TEMPERATURE,
+    AD5940_TASK_TYPE_ELECTROCHEMICAL_CA,
+    AD5940_TASK_TYPE_ELECTROCHEMICAL_CV,
+    AD5940_TASK_TYPE_ELECTROCHEMICAL_DPV,
+} AD5940_TASK_TYPE;
 
 // ==================================================
 // Parameters
@@ -64,46 +65,65 @@ typedef union {
 
 typedef struct
 {
-    AGPIOCfg_Type agpio_cfg;
+    struct {
+        AGPIOCfg_Type agpio_cfg;
+    } common;
 
-    fImpPol_Type lprtia_calibration_result;
-    fImpPol_Type hsrtia_calibration_result;
+    struct {
+        fImpPol_Type lprtia_calibration_result;
+        fImpPol_Type hsrtia_calibration_result;
 
-    AD5940_ClockConfig clockConfig;
-    float lfoscFrequency;
+        AD5940_ClockConfig clockConfig;
+        float lfoscFrequency;
 
-    // /**
-    //  * Refer to pages 50 and 52 of the datasheet.
-    //  * @ref HSTIARTIA_Const
-    //  */
-    uint32_t HstiaRtiaSel;
+        // /**
+        //  * Refer to pages 50 and 52 of the datasheet.
+        //  * @ref HSTIARTIA_Const
+        //  */
+        uint32_t HstiaRtiaSel;
+        
+        uint32_t ADCSinc2Osr;
+        uint32_t ADCSinc3Osr;
+
+        float ADCRefVolt;
+
+        uint32_t ADCAvgNum;
+        uint32_t ADCRate;
+        uint32_t ADCPga;
+        
+        uint32_t DftNum;
+        uint32_t DftSrc;
+
+        BoolFlag HanWinEn;
+
+        uint32_t LpAmpPwrMod;
+
+        BoolFlag BpNotch;
+        BoolFlag BpSinc3;
+        BoolFlag Sinc2NotchEnable;
+
+        uint32_t LpTiaRf;
+        uint32_t LpTiaRload;
+        uint32_t LpTiaRtia;
+
+        uint32_t DataType;
+        uint32_t FifoSrc;
+    } electrochemical;
     
-    uint32_t ADCSinc2Osr;
-    uint32_t ADCSinc3Osr;
+    struct {
+        AD5940_ClockConfig clockConfig;
+        float lfoscFrequency;
 
-    float ADCRefVolt;
-
-    uint32_t ADCAvgNum;
-    uint32_t ADCRate;
-    uint32_t ADCPga;
-    
-    uint32_t DftNum;
-    uint32_t DftSrc;
-
-    BoolFlag HanWinEn;
-
-    uint32_t LpAmpPwrMod;
-
-    BoolFlag BpNotch;
-    BoolFlag BpSinc3;
-    BoolFlag Sinc2NotchEnable;
-
-    uint32_t LpTiaRf;
-    uint32_t LpTiaRload;
-    uint32_t LpTiaRtia;
-
-    uint32_t DataType;
-    uint32_t FifoSrc;
+        uint32_t ADCAvgNum;
+        uint32_t ADCPga;
+        uint32_t ADCSinc2Osr;
+        uint32_t ADCSinc3Osr;
+        BoolFlag BpNotch;
+        BoolFlag BpSinc3;
+        uint32_t DataType;
+        uint32_t FifoSrc;
+        BoolFlag Sinc2NotchEnable;
+    } temperature;
 } AD5940_TASK_COMMAND_PARAM;
 
 typedef struct
@@ -129,10 +149,23 @@ typedef enum {
 
 AD5940_TASK_COMMAND_STATE AD5940_TASK_COMMAND_get_state(void);
 
+typedef struct {
+    AD5940_TASK_TYPE type;
+    union {
+        struct {
+            AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION parameters;
+            AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING routing;
+        } electrochemical;
+        struct {
+            float sampling_interval;
+            float sampling_time;
+            uint32_t TEMPSENS;
+        } temperature;
+    } param;
+} AD5940_TASK_MEASUREMENT_PARAM;
+
 int AD5940_TASK_COMMAND_measure(
-    const AD5940_TASK_ELECTROCHEMICAL_TYPE type,
-    const AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION *const parameters,
-    const AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING *const routing
+    const AD5940_TASK_MEASUREMENT_PARAM *const param
 );
 
 #ifdef __cplusplus

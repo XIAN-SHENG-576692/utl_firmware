@@ -10,13 +10,28 @@ extern "C"
 
 // ==================================================
 // PORT
+typedef enum {
+    COMMAND_RECEIVER_START_TYPE_STOP,
+    COMMAND_RECEIVER_START_TYPE_ELECTROCHEMICAL_CA,
+    COMMAND_RECEIVER_START_TYPE_ELECTROCHEMICAL_CV,
+    COMMAND_RECEIVER_START_TYPE_ELECTROCHEMICAL_DPV,
+} COMMAND_RECEIVER_START_TYPE;
+
+typedef struct
+{
+    COMMAND_RECEIVER_START_TYPE type;
+    union {
+        struct {
+        } stop;
+        struct {
+            AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION parameters;
+            AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING routing;
+        } electrochemical;
+    } param;
+} COMMAND_RECEIVER_START;
+
 int COMMAND_RECEIVER_wait_command_received(
-    uint8_t **const command,
-    uint16_t *const command_length
-);
-int COMMAND_RECEIVER_send_response(
-    uint8_t *const command,
-    const uint16_t command_length
+    COMMAND_RECEIVER_START *const start
 );
 // ==================================================
 
@@ -37,7 +52,9 @@ typedef struct
     COMMAND_RECEIVER_PARAM param;
 } COMMAND_RECEIVER_CFG;
 
-int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg);
+int COMMAND_RECEIVER_run(
+    const COMMAND_RECEIVER_CFG *const cfg
+);
 
 typedef enum {
     COMMAND_RECEIVER_STATE_UNINITIALIZED,

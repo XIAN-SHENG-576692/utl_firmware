@@ -4,39 +4,46 @@
 
 #include "ad5940_task_command.h"
 
+#include "kernel_sleep.h"
+
+#include "ad5940_utils.h"
+
 static const COMMAND_RECEIVER_CFG *_cfg;
 static volatile _Atomic COMMAND_RECEIVER_STATE _state = COMMAND_RECEIVER_STATE_UNINITIALIZED;
-
-#define BUFF_LENGTH 70
-static uint8_t response[BUFF_LENGTH];
 
 COMMAND_RECEIVER_STATE COMMAND_RECEIVER_get_state(void)
 {
     return atomic_load(&_state);
 }
 
-int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
+static int _map_type_from_receiver_to_ad5940_task(
+    const COMMAND_RECEIVER_START_TYPE origin,
+    AD5940_TASK_TYPE *const new
+)
+{
+    *new = (AD5940_TASK_TYPE) origin;
+    return 0;
+}
+
+int COMMAND_RECEIVER_run(
+    const COMMAND_RECEIVER_CFG *const cfg
+)
 {
     int err = 0;
     _cfg = cfg;
-
-    uint8_t *command;
-    uint16_t command_length;
-    AD5940_TASK_ELECTROCHEMICAL_TYPE electrochemical_type;
-    AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION parameters;
-    AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING electrode_routing;
+    
+    COMMAND_RECEIVER_START start;
 
     atomic_store(&_state, COMMAND_RECEIVER_STATE_IDLE);
 
 	for (;;) {
         err = COMMAND_RECEIVER_wait_command_received(
-            &command,
-            &command_length
+            &start
         );
 
 		if (err) {
             atomic_store(&_state, COMMAND_RECEIVER_STATE_ERROR);
-            return err;
+            for(;;) {}
         }
         atomic_store(&_state, COMMAND_RECEIVER_STATE_EXECUTING);
 
@@ -46,98 +53,36 @@ int COMMAND_RECEIVER_run(const COMMAND_RECEIVER_CFG *const cfg)
             _cfg->callback.start();
         }
 
-        // Check
-		if(command[0] != 0x01) 
-		{
-			continue;
-		}
-
-        switch (command[1])
+        if(start.type == COMMAND_RECEIVER_START_TYPE_STOP)
         {
-        case 0x00:
+            AD5940_shutdown_afe_lploop_hsloop_dsp();
+        }
+        else
         {
             {
-                AD5940_TASK_COMMAND_STATE state = AD5940_TASK_COMMAND_get_state();
-                if(state != AD5940_TASK_COMMAND_STATE_IDLE) continue;
+                AD5940_TASK_MEASUREMENT_PARAM param = {
+                    .type = AD5940_TASK_TYPE_TEMPERATURE,
+                    .param.temperature = {
+                        .sampling_interval = 0.01,
+                        .sampling_time = 0.01,
+                        .TEMPSENS = 0,
+                    },
+                };
+                AD5940_TASK_COMMAND_measure(&param);
             }
-
-            // Entity id
-            uint32_t entity_id;
-            memcpy(
-                &entity_id,
-                (command + (1 + 1)),
-                sizeof(uint32_t)
-            );
-
-            // Get witch type of electrochemical we want to measure.
-            electrochemical_type = command[(1 + 1 + sizeof(entity_id))];
-
-            memcpy(
-                &parameters,
-                (command + (1 + 1 + sizeof(entity_id) + sizeof(electrochemical_type))),
-                sizeof(AD5940_TASK_ELECTROCHEMICAL_PARAMETERS_UNION)
-            );
-
-            memcpy(
-                &electrode_routing,
-                (command + (1 + 1 + sizeof(entity_id) + sizeof(electrochemical_type) + sizeof(parameters))),
-                sizeof(AD5940_ELECTROCHEMICAL_ELECTRODE_ROUTING)
-            );
-
+            KERNEL_SLEEP_ms(100);
             {
-                uint8_t *p0 = response;
-                uint8_t *p1 = p0;
-
-                *p1++ = 0x02;
-                *p1++ = 0x01;
-
-                memcpy(p1, &entity_id, sizeof(entity_id));
-                p1 += sizeof(entity_id);
-
-                memcpy(p1, &electrochemical_type, sizeof(electrochemical_type));
-                p1 += sizeof(electrochemical_type);
-
-                memcpy(p1, &parameters, sizeof(parameters));
-                p1 += sizeof(parameters);
-
-                memcpy(p1, &electrode_routing, sizeof(electrode_routing));
-                p1 += sizeof(electrode_routing);
-
-                memcpy(p1, &_cfg->param.ad5940_task_command_param->hsrtia_calibration_result, sizeof(_cfg->param.ad5940_task_command_param->hsrtia_calibration_result));
-                p1 += sizeof(_cfg->param.ad5940_task_command_param->hsrtia_calibration_result);
-
-                float adcPga;
-                AD5940_map_ADCPGA(_cfg->param.ad5940_task_command_param->ADCPga, &adcPga);
-                memcpy(p1, &adcPga, sizeof(adcPga));
-                p1 += sizeof(adcPga);
-
-                float adcRefVolt = _cfg->param.ad5940_task_command_param->ADCRefVolt;
-                memcpy(p1, &adcRefVolt, sizeof(adcRefVolt));
-                p1 += sizeof(adcRefVolt);
-
-                // Calculate the packet length
-                uint16_t p_len = p1 - p0;
-
-                // Send packet
-                COMMAND_RECEIVER_send_response(p0, p_len);
-            }
-            {
-                AD5940_TASK_COMMAND_measure(
-                    electrochemical_type,
-                    &parameters,
-                    &electrode_routing
+                AD5940_TASK_MEASUREMENT_PARAM param = {};
+                _map_type_from_receiver_to_ad5940_task(
+                    start.type,
+                    &param.type
                 );
+                param.param.electrochemical.parameters = start.param.electrochemical.parameters;
+                param.param.electrochemical.routing = start.param.electrochemical.routing;
+                AD5940_TASK_COMMAND_measure(&param);
             }
-            break;
         }
-        case 0x01:
-        {
-            // TODO
-            break;
-        }
-        default:
-            break;
-        }
+
         atomic_store(&_state, COMMAND_RECEIVER_STATE_IDLE);
 
         // callback

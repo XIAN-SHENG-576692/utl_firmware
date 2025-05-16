@@ -328,7 +328,7 @@ int AD5940_ADC_SENDER_run(void)
 			AD5940_convert_adc_to_temperature(
 				result.fifo_buffer[0],
 				UTL_AD5940_TEMPERATURE_PARAMETERS_ADCPga,
-				(int32_t *) p
+				(float*) p
 			);
 			p += sizeof(int32_t);
 			break;
@@ -340,7 +340,7 @@ int AD5940_ADC_SENDER_run(void)
 				&ad5940_task_command_cfg.param.electrochemical.hsrtia_calibration_result,
 				UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCPga,
 				UTL_AD5940_ELECTROCHEMICAL_PARAMETERS_ADCRefVolt,
-				(int32_t *) p
+				(float*) p
 			);
 			p += sizeof(int32_t);
 			break;

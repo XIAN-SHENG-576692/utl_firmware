@@ -18,7 +18,7 @@ typedef struct
 {
     enum {
         AD5940_TASK_ADC_RESULT_FLAG_TEMPERATURE,
-        AD5940_TASK_ADC_RESULT_FLAG_HSTIA_CURRENT,
+        AD5940_TASK_ADC_RESULT_FLAG_HSTIA_VOLT_TO_CURRENT,
     } flag;
     uint16_t fifo_count;
     uint16_t adc_data_index;

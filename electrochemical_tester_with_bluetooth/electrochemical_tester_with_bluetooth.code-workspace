@@ -95,7 +95,11 @@
 			"ble_simple_impl_zephyr.h": "c",
 			"stdatomic.h": "c",
 			"atomic": "c",
-			"settings.h": "c"
+			"settings.h": "c",
+			"ad5940_electrochemical_utils_struct.h": "c",
+			"ad5940_electrochemical_utils_sop.h": "c",
+			"ad5940_electrochemical_utils_electrode_routing.h": "c",
+			"stdlib.h": "c"
 		}
 	}
 }

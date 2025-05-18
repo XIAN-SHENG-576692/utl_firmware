@@ -26,7 +26,6 @@ target_link_libraries(app PRIVATE spi)
 # NORDIC SDK APP START
 target_sources(app PRIVATE
   ./src/main.c
-  ./src/application/ad5940_clock_init.c
   ./src/application/ad5940_electrochemical_calibration.c
   ./src/port/application/ad5940_intc0_lock_impl_zephyr.c
   ./src/port/sdk/ad5940/ad5940_port_delay_impl_zephyr.c

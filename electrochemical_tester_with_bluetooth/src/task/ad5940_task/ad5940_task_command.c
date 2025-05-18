@@ -43,7 +43,7 @@ typedef struct
     AD5940_ELECTROCHEMICAL_RUN_CONFIG run_config;
     AD5940_ELECTROCHEMICAL_LPDAC_TO_LPTIA_CONFIG lpdac_to_lptia_config;
     AD5940_ELECTROCHEMICAL_LPDAC_TO_HSTIA_CONFIG lpdac_to_hstia_config;
-    AD5940_ELECTROCHEMICAL_HSDAC_MMR_TO_HSTIA_CONFIG hsdac_mmr_to_hstia_config;
+    AD5940_ELECTROCHEMICAL_HSDAC_TO_HSTIA_CONFIG hsdac_to_hstia_config;
 } _PARAM_ELECTROCHEMICAL;
 
 typedef struct
@@ -103,7 +103,6 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
             // .Sinc2NotchClkEnable,
             .Sinc2NotchEnable = _cfg->param.electrochemical.Sinc2NotchEnable,
             // .Sinc3ClkEnable
-            // .WGClkEnable
         },
         .ADCPga = _cfg->param.electrochemical.ADCPga,
         .DftCfg = {
@@ -117,10 +116,10 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
     _param.electrochemical.run_config = (AD5940_ELECTROCHEMICAL_RUN_CONFIG) {
         .agpio_cfg = &_cfg->param.common.agpio_cfg,
         .clock_cfg = &_cfg->param.electrochemical.clockConfig,
-        .LFOSC_frequency = _cfg->param.electrochemical.lfoscFrequency,
+        .LFOSCClkFreq = _cfg->param.electrochemical.lfoscFrequency,
         .DataType = _cfg->param.electrochemical.DataType,
         .FifoSrc = _cfg->param.electrochemical.FifoSrc,
-        .FIFO_thresh = ADC_SAMPLE_UNIT,
+        .FifoThresh = ADC_SAMPLE_UNIT,
     };
 
     _param.electrochemical.lpdac_to_lptia_config = (AD5940_ELECTROCHEMICAL_LPDAC_TO_LPTIA_CONFIG) {
@@ -142,7 +141,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         .electrode_routing = &measurement_param.param.electrochemical.routing,
     };
 
-    _param.electrochemical.hsdac_mmr_to_hstia_config = (AD5940_ELECTROCHEMICAL_HSDAC_MMR_TO_HSTIA_CONFIG) {
+    _param.electrochemical.hsdac_to_hstia_config = (AD5940_ELECTROCHEMICAL_HSDAC_TO_HSTIA_CONFIG) {
         
     };
 
@@ -164,9 +163,9 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
         },
         .run_cfg = {
             .agpio_cfg = &_cfg->param.common.agpio_cfg,
-            .clock_cfg = &_cfg->param.temperature.clockConfig,
+            .clock_cfg = &_cfg->param.electrochemical.clockConfig,
             .FIFO_thresh = ADC_SAMPLE_UNIT,
-            .LFOSC_frequency = _cfg->param.temperature.lfoscFrequency,
+            .LFOSC_frequency = _cfg->param.electrochemical.lfoscFrequency,
         },
     };
 
@@ -233,7 +232,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
                 measurement_param.param.electrochemical.parameters.ca.t_run
             );
             AD5940_TASK_ADC_reset(
-                AD5940_TASK_ADC_RESULT_FLAG_HSTIA_CURRENT,
+                AD5940_TASK_ADC_RESULT_FLAG_HSTIA_VOLT_TO_CURRENT,
                 adc_length
             );
             break;
@@ -260,7 +259,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
             if(err != AD5940ERR_OK) break;
             adc_length *= measurement_param.param.electrochemical.parameters.cv.number_of_scans;
             AD5940_TASK_ADC_reset(
-                AD5940_TASK_ADC_RESULT_FLAG_HSTIA_CURRENT,
+                AD5940_TASK_ADC_RESULT_FLAG_HSTIA_VOLT_TO_CURRENT,
                 adc_length
             );
             break;
@@ -286,7 +285,7 @@ AD5940Err AD5940_TASK_COMMAND_run(AD5940_TASK_COMMAND_CFG *const cfg)
             );
             if(err != AD5940ERR_OK) break;
             AD5940_TASK_ADC_reset(
-                AD5940_TASK_ADC_RESULT_FLAG_HSTIA_CURRENT,
+                AD5940_TASK_ADC_RESULT_FLAG_HSTIA_VOLT_TO_CURRENT,
                 adc_length
             );
             break;

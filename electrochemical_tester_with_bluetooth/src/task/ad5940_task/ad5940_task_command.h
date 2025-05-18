@@ -70,11 +70,11 @@ typedef struct
     } common;
 
     struct {
-        fImpPol_Type lprtia_calibration_result;
-        fImpPol_Type hsrtia_calibration_result;
-
         AD5940_ClockConfig clockConfig;
         float lfoscFrequency;
+
+        fImpPol_Type lprtia_calibration_result;
+        fImpPol_Type hsrtia_calibration_result;
 
         // /**
         //  * Refer to pages 50 and 52 of the datasheet.

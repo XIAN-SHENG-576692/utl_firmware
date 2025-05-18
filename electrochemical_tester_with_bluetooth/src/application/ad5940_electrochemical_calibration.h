@@ -10,14 +10,14 @@ extern "C"
 
 typedef struct
 {
+    AD5940_ClockConfig clockConfig;
+    float lfoscFrequency;
+
     /**
      * Refer to pages 50 and 52 of the datasheet.
      * @ref HSTIARTIA_Const
      */
     uint32_t HstiaRtiaSel;
-
-    AD5940_ClockConfig clockConfig;
-    float lfoscFrequency;
 
     uint32_t SamplePeriod;
     

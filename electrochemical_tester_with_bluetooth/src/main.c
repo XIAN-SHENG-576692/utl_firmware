@@ -47,14 +47,14 @@ static uint16_t ble_packet_buffer_length;
 
 // ==================================================
 // AD5940 initialize parameters
-#include "ad5940_clock_init.h"
-static AD5940_CLOCK_INIT_CTX ad5940_clock_init_ctx = {
-};
 
 #include "ad5940_electrochemical_calibration.h"
 
 #include "utl_ad5940_electrochemical_parameters.h"
 #include "utl_ad5940_temperature_parameters.h"
+
+static AD5940_ClockConfig ad5940_clockConfig;
+static float ad5940_lfoscFrequency;
 
 // Our circuit use it.
 #define MAIN_AD5940_HSTIARTIA HSTIARTIA_10K
@@ -117,7 +117,7 @@ int AD5940_TASK_ADC_wait_ad5940_intc_triggered(void)
 	return ad5940_intc0_lock_wait();
 }
 
-AD5940_TASK_ADC_CFG ad5940_task_adc_cfg = {
+static AD5940_TASK_ADC_CFG ad5940_task_adc_cfg = {
 	.callback = {
 		.end = AD5940_TASK_ADC_add_heartbeat,
 		.start = AD5940_TASK_ADC_add_heartbeat,
@@ -333,7 +333,7 @@ int AD5940_ADC_SENDER_run(void)
 			p += sizeof(int32_t);
 			break;
 		}
-		case AD5940_TASK_ADC_RESULT_FLAG_HSTIA_CURRENT:
+		case AD5940_TASK_ADC_RESULT_FLAG_HSTIA_VOLT_TO_CURRENT:
 		{
 			AD5940_convert_adc_to_current(
 				result.fifo_buffer[0],
@@ -415,12 +415,34 @@ int main(void)
 	
 		// ==================================================
 		// AD5940 initialize parameters
-		err = ad5940_clock_init(
-			&ad5940_clock_init_ctx
-		);
-		if (err) return err;
-		ad5940_electrochemical_calibration_parameters.clockConfig = ad5940_clock_init_ctx.clockConfig;
-		ad5940_electrochemical_calibration_parameters.lfoscFrequency = ad5940_clock_init_ctx.lfoscFrequency;
+
+		/**
+		 * Refer to page 55 of the datasheet.
+		 * High power mode is only necessary for impedance measurements when the frequency exceeds 80 kHz.
+		 */
+		{
+			// set Active power
+			err = AD5940_set_active_power(
+				AFEPWR_LP,
+				0x00,
+				&ad5940_clockConfig
+			);
+			if(err) return err;
+
+			// cal LFOSC
+			LFOSCMeasure_Type lfosc_measure = {
+				.CalDuration = 1000,
+				.CalSeqAddr = 0x00000000,
+				.SystemClkFreq = ad5940_clockConfig.SysClkFreq,
+			};
+			err = AD5940_LFOSCMeasure(
+				&lfosc_measure,
+				&ad5940_lfoscFrequency
+			);
+			if(err) return err;
+		}
+		ad5940_electrochemical_calibration_parameters.clockConfig = ad5940_clockConfig;
+		ad5940_electrochemical_calibration_parameters.lfoscFrequency = ad5940_lfoscFrequency;
 
 		err = ad5940_electrochemical_calibration(
 			&ad5940_electrochemical_calibration_parameters,
@@ -453,14 +475,14 @@ int main(void)
 		ad5940_task_command_cfg.param.electrochemical.lprtia_calibration_result = ad5940_electrochemical_calibration_results.lprtia_calibration_result;
 		ad5940_task_command_cfg.param.electrochemical.hsrtia_calibration_result = ad5940_electrochemical_calibration_results.hsrtia_calibration_result;
 
-		ad5940_task_command_cfg.param.electrochemical.clockConfig = ad5940_clock_init_ctx.clockConfig;
-		ad5940_task_command_cfg.param.electrochemical.lfoscFrequency = ad5940_clock_init_ctx.lfoscFrequency;
+		ad5940_task_command_cfg.param.electrochemical.clockConfig = ad5940_clockConfig;
+		ad5940_task_command_cfg.param.electrochemical.lfoscFrequency = ad5940_lfoscFrequency;
 
-		ad5940_task_command_cfg.param.electrochemical.ADCRate = ad5940_clock_init_ctx.clockConfig.ADCRate;
+		ad5940_task_command_cfg.param.electrochemical.ADCRate = ad5940_clockConfig.ADCRate;
 
 		// temperature
-		ad5940_task_command_cfg.param.temperature.clockConfig = ad5940_clock_init_ctx.clockConfig;
-		ad5940_task_command_cfg.param.temperature.lfoscFrequency = ad5940_clock_init_ctx.lfoscFrequency;
+		ad5940_task_command_cfg.param.temperature.clockConfig = ad5940_clockConfig;
+		ad5940_task_command_cfg.param.temperature.lfoscFrequency = ad5940_lfoscFrequency;
 
 		ad5940_task_command_tid = k_thread_create(
 			&ad5940_task_command_thread,

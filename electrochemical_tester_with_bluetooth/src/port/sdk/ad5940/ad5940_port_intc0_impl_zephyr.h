@@ -5,9 +5,7 @@ extern "C"
 {
 #endif
 
-#include "ad5940.h"
-
-AD5940Err test_ad5940_init(void);
+int AD5940_intc0_impl_zephyr_init(void (*callback)(void));
 
 #ifdef __cplusplus
 }

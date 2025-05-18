@@ -26,25 +26,22 @@ target_link_libraries(app PRIVATE spi)
 # NORDIC SDK APP START
 target_sources(app PRIVATE
   ./src/main.c
-  ./src/application/test_ad5940_electrochemical_ca.c
-  ./src/application/test_ad5940_electrochemical_calibration_result.c
-  ./src/application/test_ad5940_electrochemical_calibration.c
-  ./src/application/test_ad5940_electrochemical_cv.c
-  ./src/application/test_ad5940_electrochemical_dpv.c
-  ./src/application/test_ad5940_init.c
-  ./src/application/test_ad5940_lock.c
-  ./src/application/test_ad5940_parameters.c
-  ./src/application/test_ad5940_temperature.c
-  ./src/application/utl_ad5940_electrochemical_utility_parameters.c
-  ./src/application/utl_ad5940_temperature_parameters.c
-  ./src/port/ad5940/ad5940_port_delay_impl_zephyr.c
-  ./src/port/ad5940/ad5940_port_gpio.c
-  ./src/port/ad5940/ad5940_port_intc0_impl_zephyr.c
-  ./src/port/ad5940/ad5940_port_intc1_impl_zephyr.c
-  ./src/port/ad5940/ad5940_port_reset_impl_zephyr.c
-  ./src/port/ad5940/ad5940_port_spi_impl_zephyr.c
-  ./src/port/ad5940/ad5940_port_useless.c
-  ./src/resources/ad5940_hardware.c
+  ./src/application/ad5940_electrochemical_calibration.c
+  ./src/port/application/ad5940_intc0_lock_impl_zephyr.c
+  ./src/port/sdk/ad5940/ad5940_port_delay_impl_zephyr.c
+  ./src/port/sdk/ad5940/ad5940_port_gpio_impl_zephyr.c
+  ./src/port/sdk/ad5940/ad5940_port_intc0_impl_zephyr.c
+  ./src/port/sdk/ad5940/ad5940_port_intc1_impl_zephyr.c
+  ./src/port/sdk/ad5940/ad5940_port_reset_impl_zephyr.c
+  ./src/port/sdk/ad5940/ad5940_port_spi_impl_zephyr.c
+  ./src/port/sdk/ad5940/ad5940_port_useless.c
+  ./src/port/task/ad5940_task/ad5940_task_impl_zephyr.c
+  ./src/port/task/command_receiver/command_receiver_impl_zephyr.c
+  ./src/resource/ad5940_hardware.c
+  ./src/wdt/watchdog0.c
+  ./src/task/ad5940_task/ad5940_task_adc.c
+  ./src/task/ad5940_task/ad5940_task_command.c
+  ./src/task/command_receiver/command_receiver.c
 )
 
 # Include UART ASYNC API adapter if configured
@@ -57,8 +54,16 @@ target_include_directories(app PRIVATE
   ./src/application
   ./src/driver
   ./src/port
-  ./src/port/ad5940
-  ./src/resources
+  ./src/port/sdk
+  ./src/resource
+  ./src/wdt
+  ./src/task
   ./src/driver/ad5940
+  ./src/port/application
+  ./src/task/ad5940_task
+  ./src/task/command_receiver
+  ./src/port/sdk/ad5940
+  ./src/port/task/ad5940_task
+  ./src/port/task/command_receiver
 )
 # NORDIC SDK APP END

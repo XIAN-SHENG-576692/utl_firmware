@@ -1,4 +1,4 @@
-#include "ad5940_port_gpio.h"
+#include "ad5940_port_gpio_impl_zephyr.h"
 
 #include "driver_gpio_impl_zephyr.h"
 

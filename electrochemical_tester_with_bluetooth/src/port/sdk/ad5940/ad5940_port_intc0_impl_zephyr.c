@@ -1,20 +1,13 @@
 #include "ad5940_port_intc0_impl_zephyr.h"
 
 #include "gpio_debounce.h"
-
-#include "test_ad5940_lock.h"
-#include "ad5940_port_gpio.h"
+#include "ad5940_port_gpio_impl_zephyr.h"
 
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(ad5940_intc0, LOG_LEVEL_INF);
 
-static void ad5940_intc0_triggered(void)
-{
-    test_ad5940_lock_boardcast();
-}
-
-int AD5940_intc0_impl_zephyr_init(void)
+int AD5940_intc0_impl_zephyr_init(void (*callback)(void))
 {
     int ret;
 
@@ -24,7 +17,7 @@ int AD5940_intc0_impl_zephyr_init(void)
         GPIO_INPUT,
         K_MSEC(20),
         NULL,
-        ad5940_intc0_triggered
+        callback
     );
     if (ret) {
         LOG_ERR("GPIO device not ready");

@@ -5,7 +5,7 @@ extern "C"
 {
 #endif
 
-#define TEST_AD5940_BUFFER_SIZE 500
+int COMMAND_RECEIVER_init_impl_zephyr(void);
 
 #ifdef __cplusplus
 }

@@ -5,7 +5,9 @@ extern "C"
 {
 #endif
 
-int AD5940_intc0_impl_zephyr_init(void);
+int watchdog0_init(void);
+
+int watchdog0_feed(void);
 
 #ifdef __cplusplus
 }
